@@ -1,5 +1,5 @@
 # STAT_APP
-The goal of this project is to implement algorithm with the objective of smooth time series corresponding to the performance of alternative assets.
+The objective of this project is to implement algorithm with the objective of smooth time series corresponding to the performance of alternative assets.
 Several research paper will be used such as : 
 2004-07 - Germansky, Lo, Makarov - An econometric model of serial correlation and illiquidity in hedge fund returns
 2020-11 - Couts, Goncalves, Rossi - Unsmoothing Returns of Illiquid Asset

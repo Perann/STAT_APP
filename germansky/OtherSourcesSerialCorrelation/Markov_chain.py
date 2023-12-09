@@ -3,7 +3,6 @@ import scipy
 
 #Time-varying expected returns
 #Markov process:
-
 class two_state_markov_chain:
     def __init__(self, p, q):
         self.p = p
@@ -14,8 +13,14 @@ class two_state_markov_chain:
 
     def get_invariant_law(self):
         return np.array([(1-self.p)/(2-self.p-self.q), (1-self.q)/(2-self.p-self.q)])
-    
 
-print(two_state_markov_chain(0.3, 0.4).get_invariant_law())
+# Return 
+
+def get_expected_return(mu,p,q):
+    return mu[1]*(1-q)/(2-p-q) + mu[0]*(1-p)/(2-p-q)
+def get_variance(mu,p,q):
+    pass
+
+    
 
 

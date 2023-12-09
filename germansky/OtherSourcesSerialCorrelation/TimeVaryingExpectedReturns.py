@@ -6,12 +6,6 @@ def auto_correlation(p,q,sigma, delta,order=1):
 def get_sigma_from_variance(Var,p,q,delta):
     return Var - (delta**2)*((1-p)*(1-q)/(2-p-q)**2)
 
-
-
-assert get_sigma_from_variance((0.20**2)/12,1,0,0.05) == (0.20**2)/12
-assert get_sigma_from_variance((0.20**2)/12,0,1,0.05) == (0.20**2)/12
-
-
 def make_pannel_A():
     T = np.zeros((9,9))
     for i in range(9):
@@ -42,8 +36,9 @@ def make_pannel_C():
             T[i,j] = round(100*auto_correlation(p,q, sigma2, 0.20, 1),1)
     return T
 
+def table1():
+    return make_pannel_A(), make_pannel_B(), make_pannel_C()
 
 
-print(make_pannel_A())
-print(make_pannel_B())
-print(make_pannel_C())
+if __name__ =='__main__':
+    table1()

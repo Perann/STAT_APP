@@ -13,8 +13,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
 
+# Importing packages from the prject
+from WeightsFunctions.weights import Weights
+
 # Importing the dataset
 alternative_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
 classic_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
 
-
+# Implementing

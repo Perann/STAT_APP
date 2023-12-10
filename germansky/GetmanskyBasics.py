@@ -39,10 +39,10 @@ results = classic_asset_data.copy()
 results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Hedge Fund DJ - USD Unhedged'])
 
 # Compute the real returns
-type_ = 'sumOfYears'
+type_ = 'geometric'
 k = 2
 mu = np.mean(results['returns hedge fund'])
-weights = Weights(type_, k)
+weights = Weights(type_, k, delta = 0.9)
 
 def objective_function(beta):
     """This function computes the objective function of the Getmansky model"""
@@ -54,9 +54,10 @@ def objective_function(beta):
 
 beta = scipy.optimize.minimize(objective_function, x0 = 1).x[0]
 
+
 results['returns R'] = mu + beta*results['returns US equity']
-results['returns R'].plot(legend = 'Rt')
-results['returns hedge fund'].plot(legend = 'Rto')
+results['returns R'].plot(label = 'Rt')
+results['returns hedge fund'].plot(label = 'Rto')
 plt.legend()
-plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_{type_}_{k}.png')
+#plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_{type_}_{k}.png')
 plt.show()

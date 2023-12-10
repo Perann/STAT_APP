@@ -17,6 +17,9 @@ ObservedReturns = datas_to_unsmooth['Return Commodity - USD Unhedged']
 unsmoothed = get_ar_unsmoothed(ObservedReturns)
 dates  = datas_to_unsmooth['QUARTER'][1:]
 
+ecart = [np.abs(x - y) for x, y in zip(ObservedReturns[1:], unsmoothed)]
+
+print(np.mean(ecart))
 
 plt.figure()
 plt.title('Unsmoothing with AR(1) method')

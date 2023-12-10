@@ -27,7 +27,7 @@ def function(alpha):
         res += (ObservedReturns[t] - gamma*(1-alpha) -(alpha + phi)*ObservedReturns[t-1] - alpha*phi*ObservedReturns[t-2])**2
     return res
 
-a = scipy.optimize.minimize(function,1/2).x[0]
+opt_alpha = scipy.optimize.minimize(function,1/2).x[0]
 
 # Getting unsmoothed
 def get_unsmoothed_return(alpha):
@@ -36,12 +36,12 @@ def get_unsmoothed_return(alpha):
         L.append(ObservedReturns[t] - alpha*ObservedReturns[t-1]/(1-alpha))
     return L
 
+Unsmoothed_returns = get_unsmoothed_return(opt_alpha)
+Observed_Returns = ObservedReturns[1:]
 
 
 #Plotting
-Observed_Returns = ObservedReturns[1:]
 dates  = serie['QUARTER'][1:]
-Unsmoothed_returns = get_unsmoothed_return(a)
 plt.figure()
 plt.title('Unsmoothing with AR(1) method')
 plt.plot(dates, Observed_Returns, c = 'darkblue', label = 'Observed Returns')

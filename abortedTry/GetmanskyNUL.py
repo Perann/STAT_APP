@@ -13,7 +13,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import scipy.stats as stats
 import scipy
-from sklearn.linear_model import LinearRegression
 
 # Importing packages from the prject
 from WeightsFunctions.weights import Weights
@@ -40,28 +39,30 @@ results = classic_asset_data.copy()
 results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Hedge Fund DJ - USD Unhedged'])
 
 # Compute the real returns
-type_ = 'equal'
+type_ = 'geometric'
 k = 2
-mu = np.mean(results['returns hedge fund'])
-weights = Weights(type_, k)
+#mu = np.mean(results['returns hedge fund'])
+weights = Weights(type_, k, delta = 0.9)
 
-_tmp = [results['returns hedge fund'].iloc[0], results['returns hedge fund'].iloc[1]]
+def objective_function(params):
+    """This function computes the objective function of the Getmansky model"""
+    
+    beta, mu = params[0], params[1]
 
-for i in range(2, len(results)):
-    _tmp.append((results['returns hedge fund'].iloc[i] - np.dot(weights.list[1:], _tmp[-2:]))/weights.list[0])
+    _gen = (i for i in results['returns US equity'].rolling(3) if len(i) == 3)
+    _sum = np.array([np.dot(i.values,weights.list) for i in _gen])
 
-_tmp[0], _tmp[1] = np.nan, np.nan
-results['Rt'] = _tmp
-results.dropna(inplace = True)
+    return np.sum((results['returns hedge fund'][2:]-mu-beta*_sum)**2)
 
-lr = LinearRegression()
-lr.fit(results['returns US equity'].values.reshape(-1, 1), results['Rt'].values.reshape(-1, 1))
-beta, mu = lr.coef_[0, 0], lr.intercept_[0]
+opti = scipy.optimize.minimize(objective_function, x0 = [1, 0])
+if not opti.success:
+    raise ValueError('The optimization did not converge')
+beta, mu = opti.x
 
+print(mu)
 results['returns R'] = mu + beta*results['returns US equity']
-
 results['returns R'].plot(label = 'Rt unsmoothed')
 results['returns hedge fund'].plot(label = 'Rt smoothed')
 plt.legend()
-#plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
+#plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_{type_}_{k}.png')
 plt.show()

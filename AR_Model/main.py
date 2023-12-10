@@ -3,7 +3,7 @@ import scipy
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
-
+from autoreg_coeff import auto_reg
 
 alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
 classic_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
@@ -18,12 +18,7 @@ serie = serie.reset_index(drop=True)
 
 #autoreg
 ObservedReturns = serie['Return UK Property Direct - USD Unhedged']
-print(ObservedReturns)
-model = ARIMA(ObservedReturns, order=(1, 1, 1))
-results = model.fit()
-coeff = results.params
-gamma, phi = coeff[0], coeff[1]
-
+gamma,phi = auto_reg(ObservedReturns)
 
 #find alpha
 def function(alpha):
@@ -44,9 +39,16 @@ def get_unsmoothed_return(alpha):
 
 
 #Plotting
+Observed_Returns = ObservedReturns[1:]
+dates  = serie['QUARTER'][1:]
+Unsmoothed_returns = get_unsmoothed_return(a)
 plt.figure()
-plt.plot(serie['QUARTER'][1:],ObservedReturns[1:])
-plt.plot(serie['QUARTER'][1:],get_unsmoothed_return(a))
+plt.title('Unsmoothing with AR(1) method')
+plt.plot(dates, Observed_Returns, c = 'darkblue', label = 'Observed Returns')
+plt.plot(dates, Unsmoothed_returns, 'o--', c = 'orange', ms = 4, label = 'Unsmoothed Returns')
+plt.legend()
+plt.xticks(rotation=45)
+plt.xticks(dates[::4])
 plt.show()
 
 

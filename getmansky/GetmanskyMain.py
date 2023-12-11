@@ -71,7 +71,7 @@ print(results)
 class GetmanskyModel:
     def __init__(self, k):
         self.k = k
-        self.weights = [0]*(k+1)
+        self.weights = Weights("equal", k)
         self.mu = 0
         self.beta = 1
 

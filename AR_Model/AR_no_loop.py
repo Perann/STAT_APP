@@ -3,8 +3,8 @@ import scipy
 import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
-from autoreg_coeff import auto_reg
-from get_alpha import get_alpha
+
+
 
 alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
 alternative_asset_data['Return Commodity - USD Unhedged'] = alternative_asset_data['Commodity - USD Unhedged'].pct_change()
@@ -17,11 +17,21 @@ serie = serie.reset_index(drop=True)
 
 #autoreg
 ObservedReturns = serie['Return UK Property Direct - USD Unhedged']
-gamma,phi = auto_reg(ObservedReturns)
+model = ARIMA(ObservedReturns, order=(1, 0, 0))
+results = model.fit()
+coeff = results.params
+gamma,phi = coeff[0],coeff[1]
 
 #find alpha
+def get_alpha(gamma,phi,datas):
+    def function_to_minimize(alpha,data):
+        res = 0
+        for t in range(2,len(datas)):
+            res += (data[t] - gamma*(1-alpha) - (alpha + phi)*data[t-1] - alpha*phi*data[t-2])**2
+        return res
+    return scipy.optimize.minimize(lambda x : function_to_minimize(x, datas),1/2).x[0]
 
-opt_alpha = get_alpha(ObservedReturns)
+opt_alpha = get_alpha(gamma,phi,serie)
 
 # Getting unsmoothed
 def get_unsmoothed_return(alpha):

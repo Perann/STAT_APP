@@ -1,32 +1,29 @@
-import pandas as pd
 import numpy as np
+import scipy 
+import pandas as pd
 import matplotlib.pyplot as plt
-from AR_function import get_ar_unsmoothed
+from statsmodels.tsa.arima.model import ARIMA
+
+from AR_functions import get_alpha, get_returns, get_gamma_phi, AR_model
 
 alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-alternative_asset_data['Return Commodity - USD Unhedged'] = alternative_asset_data['Commodity - USD Unhedged'].pct_change()
-alternative_asset_data['Return Private Equity USD Unhedged'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change()
-alternative_asset_data['Return UK Property Direct - USD Unhedged'] = alternative_asset_data['UK Property Direct - USD Unhedged'].pct_change()
+for key in alternative_asset_data.keys()[1:]:
+    alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
 
-print(alternative_asset_data.head())
+print(alternative_asset_data.keys())
 
-datas_to_unsmooth = alternative_asset_data[['QUARTER','Return Commodity - USD Unhedged']].dropna()
-datas_to_unsmooth = datas_to_unsmooth.reset_index(drop = True)
+data_to_analyse = alternative_asset_data[['QUARTER','Return Hedge Fund DJ - USD Unhedged']].dropna()
 
-ObservedReturns = datas_to_unsmooth['Return Commodity - USD Unhedged']
-unsmoothed = get_ar_unsmoothed(ObservedReturns)
-dates  = datas_to_unsmooth['QUARTER'][1:]
+quarter = data_to_analyse['QUARTER']
+datas_to_unsmooth = data_to_analyse['Return Hedge Fund DJ - USD Unhedged'].reset_index(drop = True)
 
-ecart = [np.abs(x - y) for x, y in zip(ObservedReturns[1:], unsmoothed)]
+unsmoothed = AR_model(datas_to_unsmooth)
 
-print(np.mean(ecart))
-
-plt.figure()
-plt.title('Unsmoothing with AR(1) method')
-plt.plot(dates, ObservedReturns[1:], c = 'darkblue', label = 'Observed Returns')
-plt.plot(dates, unsmoothed, 'o--', c = 'orange', ms = 4, label = 'Unsmoothed Returns')
+plt.plot(quarter,datas_to_unsmooth, label = 'Observed Returns')
+plt.plot(quarter,unsmoothed, label = 'Unsmoothed Returns')
 plt.legend()
-plt.xticks(rotation=45)
-plt.xticks(dates[::4])
+plt.title('Returns Hedge Fund DJ - USD Unhedged unsmoothed with AR method')
+plt.xticks(quarter[::15])
+plt.xlabel('Quarters')
+plt.ylabel('Returns')
 plt.show()
-

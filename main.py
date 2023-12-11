@@ -33,9 +33,10 @@ if __name__ == "__main__":
 
     results = classic_asset_data.copy()
     results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True)
-    results.drop(columns = ['Private Equity USD Unhedged'], inplace = True)
+    results.drop(columns = ['Private Equity USD Unhedged', 'Liquidity USD Unhedged', 'US Government Bond USD Unhedged'], inplace = True)
 
     # Getmansky model
+    results['returns PE'].plot(label = 'Rt smoothed')
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("equal")
     for name in results.columns[:-1]:
@@ -46,4 +47,5 @@ if __name__ == "__main__":
     
     plt.title("Getmansky model with equal weights PE/multibench")
     plt.legend()
+    #plt.savefig('getmansky_equal_weights_PE_multibench.png')
     plt.show()

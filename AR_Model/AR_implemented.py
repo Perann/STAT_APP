@@ -9,12 +9,13 @@ alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlterna
 for key in alternative_asset_data.keys()[1:]:
     alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
 
+
 print(alternative_asset_data.keys())
-serie = alternative_asset_data[['QUARTER','Return Private Equity USD Unhedged']].dropna()
+serie = alternative_asset_data[['QUARTER','Return Infrastructure Debt - USD Unhedged']].dropna()
 
 
 
-datas_to_unsmooth = serie['Return Private Equity USD Unhedged'].reset_index(drop=True)
+datas_to_unsmooth = serie['Return Infrastructure Debt - USD Unhedged'].reset_index(drop=True)
 date = serie['QUARTER']
 
 def get_alpha(gamma,phi,datas):
@@ -60,8 +61,7 @@ unsmoothed = AR_model(1,1,datas_to_unsmooth)
 plt.plot(date,datas_to_unsmooth, label = 'Observed Returns')
 plt.plot(date,unsmoothed, label = 'Unsmoothed Returns')
 plt.legend()
-plt.title('Private Equity USD unhedged unsmoothed with AR Model')
+plt.title('Return Infrastructure Debt - USD Unhedged unsmoothed with AR method')
 plt.xticks(rotation=45)
 plt.xticks(date[::6])
 plt.show()
-plt.savefig('C:\\Users\\LENOVO\\Desktop\\Stat_app\\AR_Model\\outputAR_Model\\Private Equity USD unhedged unsmoothed with AR Model.jpg')

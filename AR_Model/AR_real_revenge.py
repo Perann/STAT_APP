@@ -6,18 +6,16 @@ from statsmodels.tsa.arima.model import ARIMA
 
 
 alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-alternative_asset_data['Return Commodity - USD Unhedged'] = alternative_asset_data['Commodity - USD Unhedged'].pct_change()
-alternative_asset_data['Return Private Equity USD Unhedged'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change()
-alternative_asset_data['Return UK Property Direct - USD Unhedged'] = alternative_asset_data['UK Property Direct - USD Unhedged'].pct_change()
+for key in alternative_asset_data.keys()[1:]:
+    alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
 
-
+print(alternative_asset_data.keys())
 serie = alternative_asset_data[['QUARTER','Return Private Equity USD Unhedged']].dropna()
 
+
+
 datas_to_unsmooth = serie['Return Private Equity USD Unhedged'].reset_index(drop=True)
-
 date = serie['QUARTER']
-T = len(date)
-
 
 def get_alpha(gamma,phi,datas):
     def function_to_minimize(alpha,data):
@@ -29,9 +27,9 @@ def get_alpha(gamma,phi,datas):
 
 
 def get_returns(alpha,ObsReturned):
-    TrueReturn = np.zeros(T)
+    TrueReturn = np.zeros(len(ObsReturned))
     TrueReturn[0] = ObsReturned[0]
-    for i in range(1,T):
+    for i in range(1,len(ObsReturned)):
         TrueReturn[i] = (ObsReturned[i]-alpha*ObsReturned[i-1])/(1-alpha)
     return TrueReturn
 
@@ -40,7 +38,6 @@ def get_gamma_phi(Returns):
     results = model.fit()
     coeff = results.params
     return (coeff[0],coeff[1])
-
 
 def AR_model(gamma0,phi0,datas_to_unsmooth):
     alpha = get_alpha(gamma0,phi0,datas_to_unsmooth)
@@ -63,7 +60,8 @@ unsmoothed = AR_model(1,1,datas_to_unsmooth)
 plt.plot(date,datas_to_unsmooth, label = 'Observed Returns')
 plt.plot(date,unsmoothed, label = 'Unsmoothed Returns')
 plt.legend()
-plt.title('Private Equity USD unhedged')
+plt.title('Private Equity USD unhedged unsmoothed with AR Model')
 plt.xticks(rotation=45)
-plt.xticks(date[::6 ])
+plt.xticks(date[::6])
 plt.show()
+

@@ -25,6 +25,6 @@ serie = alternative_asset_data[['QUARTER','Return Private Equity USD Unhedged']]
 
 datas_to_unsmooth = serie['Return Private Equity USD Unhedged'].reset_index(drop=True)
 
-date = serie['QUARTER']
+date = serie['QUARTER'].reset_index
 
 graph_plot(date,datas_to_unsmooth)

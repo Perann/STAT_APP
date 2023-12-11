@@ -38,8 +38,8 @@ classic_asset_data.dropna(inplace = True)
 
 results = classic_asset_data.copy()
 results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Hedge Fund DJ - USD Unhedged'])
-
-# Compute the real returns
+result = results.copy() # à enlever
+#Compute the real returns
 type_ = 'equal'
 k = 2
 mu = np.mean(results['returns hedge fund'])
@@ -59,9 +59,47 @@ lr.fit(results['returns US equity'].values.reshape(-1, 1), results['Rt'].values.
 beta, mu = lr.coef_[0, 0], lr.intercept_[0]
 
 results['returns R'] = mu + beta*results['returns US equity']
+print(results)
 
-results['returns R'].plot(label = 'Rt unsmoothed')
-results['returns hedge fund'].plot(label = 'Rt smoothed')
-plt.legend()
-#plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
-plt.show()
+# results['returns R'].plot(label = 'Rt unsmoothed')
+# results['returns hedge fund'].plot(label = 'Rt smoothed')
+# plt.legend()
+# #plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
+# plt.show()
+
+
+class GetmanskyModel:
+    def __init__(self, k):
+        self.k = k
+        self.weights = [0]*(k+1)
+        self.mu = 0
+        self.beta = 1
+
+    def set_default_weights(self, type_, delta = None):
+        self.weights = Weights(type_, self.k, delta)
+
+    def optimize_weights(self):
+        
+        pass
+
+    def fit(self, Benchmark, Rto):
+        assert len(Rto) == len(Benchmark), f"Rto and Benchmark must have the same length \n The length of Rto is {len(Rto)} \n The length of Benchmark is {len(Benchmark)}"
+        _tmp = [Rto[0], Rto[1]]
+        for i in range(2, len(Rto)):
+            _tmp.append((Rto[i] - np.dot(self.weights.list[1:], _tmp[-self.k:]))/self.weights.list[0])
+        Benchmark, _tmp = np.array(Benchmark[2:]), np.array(_tmp[2:])
+
+        lr = LinearRegression()
+        lr.fit(Benchmark, _tmp)
+
+        self.beta, self.mu = lr.coef_[0, 0], lr.intercept_[0]
+
+    def predict(self, Benchmark):
+        return self.mu + self.beta*np.array(Benchmark)
+
+
+getmansky = GetmanskyModel(2)
+getmansky.set_default_weights('equal')
+getmansky.fit(result['returns US equity'].values.reshape(-1, 1), result['returns hedge fund'].values.reshape(-1,1))
+results['returns R2'] = getmansky.predict(results['returns US equity'])
+print(results)

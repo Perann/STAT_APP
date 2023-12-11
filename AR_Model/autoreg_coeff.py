@@ -9,4 +9,3 @@ def auto_reg(serie,p_order = 1, intergrate = 0, moving_average = 0):
     results = model.fit()
     coeff = results.params
     return (coeff[0], coeff[1])
-

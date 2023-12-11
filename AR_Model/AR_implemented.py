@@ -64,4 +64,4 @@ plt.title('Private Equity USD unhedged unsmoothed with AR Model')
 plt.xticks(rotation=45)
 plt.xticks(date[::6])
 plt.show()
-
+plt.savefig('C:\\Users\\LENOVO\\Desktop\\Stat_app\\AR_Model\\outputAR_Model\\Private Equity USD unhedged unsmoothed with AR Model.jpg')

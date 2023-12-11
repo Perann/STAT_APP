@@ -64,7 +64,7 @@ results['returns R'] = mu + beta*results['returns US equity']
 # results['returns R'].plot(label = 'Rt unsmoothed')
 # results['returns hedge fund'].plot(label = 'Rt smoothed')
 # plt.legend()
-# #plt.savefig(f'germansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
+# #plt.savefig(f'getmansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
 # plt.show()
 
 
@@ -113,7 +113,16 @@ class GetmanskyModel:
 
 
 getmansky = GetmanskyModel(2)
-getmansky.optimize_weights_LR(result['returns US equity'], result['returns hedge fund'])
-#getmansky.fit(result['returns US equity'].values.reshape(-1, 1), result['returns hedge fund'].values.reshape(-1,1))
-#results['returns R2'] = getmansky.predict(results['returns US equity'])
-print(getmansky.weights.xi())
+getmansky.set_default_weights("geometric", 0.85)
+#getmansky.optimize_weights_LR(result['returns US equity'], result['returns hedge fund'])
+getmansky.fit(result['returns US equity'].values.reshape(-1, 1), result['returns hedge fund'].values.reshape(-1,1))
+results['returns R2'] = getmansky.predict(results['returns US equity'])
+print(results)
+
+
+results['returns R2'].plot(label = 'Rt unsmoothed')
+results['returns hedge fund'].plot(label = 'Rt smoothed')
+plt.title("Getmansky model with geometric 0.85 weights Hedge fund/US equity")
+plt.legend()
+#plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_geometric_{k}.png')
+plt.show()

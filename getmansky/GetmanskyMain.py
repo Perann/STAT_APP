@@ -15,9 +15,12 @@ import scipy.stats as stats
 import scipy
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
+import sys
 
 # Importing packages from the prject
+sys.path.append("getmansky/")
 from WeightsFunctions.weights import Weights
+
 
 # Class of the Getmansky model
 class GetmanskyModel:

@@ -41,28 +41,29 @@ def get_gamma_phi(Returns):
     coeff = results.params
     return (coeff[0],coeff[1])
 
-gamma0 = 1
-phi0 = 1
-alpha = get_alpha(gamma0,phi0,datas_to_unsmooth)
-performance = get_returns(alpha,datas_to_unsmooth)
 
-gamma = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[0]
-phi = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[1]
-
-
-while np.abs(gamma-gamma0) >= 10**(-3) and np.abs(phi-phi0) >= 10**(-3):
-    gamma0 = gamma
-    phi0 = phi
-    alpha = get_alpha(gamma,phi,datas_to_unsmooth)
+def AR_model(gamma0,phi0,datas_to_unsmooth):
+    alpha = get_alpha(gamma0,phi0,datas_to_unsmooth)
     performance = get_returns(alpha,datas_to_unsmooth)
-    gamma = get_gamma_phi(performance)[0]
-    phi = get_gamma_phi(performance)[1]
+    gamma = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[0]
+    phi = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[1]
+
+    while np.abs(gamma-gamma0) >= 10**(-3) and np.abs(phi-phi0) >= 10**(-3):
+        gamma0 = gamma
+        phi0 = phi
+        alpha = get_alpha(gamma,phi,datas_to_unsmooth)
+        performance = get_returns(alpha,datas_to_unsmooth)
+        gamma = get_gamma_phi(performance)[0]
+        phi = get_gamma_phi(performance)[1]
+    return performance
 
 
+unsmoothed = AR_model(1,1,datas_to_unsmooth)
 
 plt.plot(date,datas_to_unsmooth, label = 'Observed Returns')
-plt.plot(date,performance, label = 'Unsmoothed Returns')
+plt.plot(date,unsmoothed, label = 'Unsmoothed Returns')
 plt.legend()
+plt.title('Private Equity USD unhedged')
 plt.xticks(rotation=45)
-plt.xticks(date[::6])
+plt.xticks(date[::6 ])
 plt.show()

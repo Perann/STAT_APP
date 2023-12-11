@@ -19,56 +19,7 @@ import statsmodels.api as sm
 # Importing packages from the prject
 from WeightsFunctions.weights import Weights
 
-# Importing the dataset
-alternative_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-classic_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
-
-# Preprocessing
-alternative_asset_data = alternative_asset_data[['QUARTER', 'Hedge Fund DJ - USD Unhedged']]
-alternative_asset_data.dropna(inplace = True)
-alternative_asset_data['returns hedge fund'] = alternative_asset_data['Hedge Fund DJ - USD Unhedged'].pct_change()
-alternative_asset_data.dropna(inplace = True)
-alternative_asset_data = alternative_asset_data.set_index('QUARTER')
-
-classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
-classic_asset_data.dropna(inplace = True)
-classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('Q').last()
-classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change()
-classic_asset_data = classic_asset_data.set_index('QUARTER')
-classic_asset_data.dropna(inplace = True)
-
-results = classic_asset_data.copy()
-results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Hedge Fund DJ - USD Unhedged'])
-result = results.copy() # à enlever
-#Compute the real returns
-type_ = 'equal'
-k = 2
-mu = np.mean(results['returns hedge fund'])
-weights = Weights(type_, k)
-
-_tmp = [results['returns hedge fund'].iloc[0], results['returns hedge fund'].iloc[1]]
-
-for i in range(2, len(results)):
-    _tmp.append((results['returns hedge fund'].iloc[i] - np.dot(weights.list[1:], _tmp[-2:]))/weights.list[0])
-
-_tmp[0], _tmp[1] = np.nan, np.nan
-results['Rt'] = _tmp
-results.dropna(inplace = True)
-
-lr = LinearRegression()
-lr.fit(results['returns US equity'].values.reshape(-1, 1), results['Rt'].values.reshape(-1, 1))
-beta, mu = lr.coef_[0, 0], lr.intercept_[0]
-
-results['returns R'] = mu + beta*results['returns US equity']
-#print(results)
-
-# results['returns R'].plot(label = 'Rt unsmoothed')
-# results['returns hedge fund'].plot(label = 'Rt smoothed')
-# plt.legend()
-# #plt.savefig(f'getmansky/output/getmanskyModel/GetmanskyModel_True_{type_}_{k}.png')
-# plt.show()
-
-
+# Class of the Getmansky model
 class GetmanskyModel:
     def __init__(self, k):
         self.k = k
@@ -113,55 +64,38 @@ class GetmanskyModel:
         return self.mu + self.beta*np.array(Benchmark)
 
 
-# getmansky = GetmanskyModel(2)
-# #getmansky.set_default_weights("geometric", 0.85)
-# getmansky.optimize_weights_LR(result['returns US equity'], result['returns hedge fund'])
-# getmansky.fit(result['returns US equity'].values.reshape(-1, 1), result['returns hedge fund'].values.reshape(-1,1))
-# results['returns R2'] = getmansky.predict(results['returns US equity'])
-# print(results)
+
+if __name__ == "__main__":
+    # Importing the dataset
+    alternative_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
+    classic_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
+
+    # Preprocessing
+    alternative_asset_data = alternative_asset_data[['QUARTER', 'Private Equity USD Unhedged']]
+    alternative_asset_data.dropna(inplace = True)
+    alternative_asset_data['returns PE'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change()
+    alternative_asset_data.dropna(inplace = True)
+    alternative_asset_data = alternative_asset_data.set_index('QUARTER')
+
+    classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
+    classic_asset_data.dropna(inplace = True)
+    classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('Q').last()
+    classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change()
+    classic_asset_data = classic_asset_data.set_index('QUARTER')
+    classic_asset_data.dropna(inplace = True)
+
+    results = classic_asset_data.copy()
+    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Private Equity USD Unhedged'])
 
 
-# results['returns R2'].plot(label = 'Rt unsmoothed')
-# results['returns hedge fund'].plot(label = 'Rt smoothed')
-# plt.title("Getmansky model with reglin weights Hedge fund/US equity")
-# plt.legend()
-# #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_geometric_{k}.png')
-# plt.show()
+    getmansky = GetmanskyModel(2)
+    getmansky.optimize_weights_LR(results['returns US equity'], results['returns PE'])
+    getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
+    results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
 
-
-#############################################################################################################
-
-# Importing the dataset
-alternative_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-classic_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
-
-# Preprocessing
-alternative_asset_data = alternative_asset_data[['QUARTER', 'Private Equity USD Unhedged']]
-alternative_asset_data.dropna(inplace = True)
-alternative_asset_data['returns PE'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change()
-alternative_asset_data.dropna(inplace = True)
-alternative_asset_data = alternative_asset_data.set_index('QUARTER')
-
-classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
-classic_asset_data.dropna(inplace = True)
-classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('Q').last()
-classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change()
-classic_asset_data = classic_asset_data.set_index('QUARTER')
-classic_asset_data.dropna(inplace = True)
-
-results = classic_asset_data.copy()
-results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Private Equity USD Unhedged'])
-
-
-getmansky = GetmanskyModel(2)
-getmansky.optimize_weights_LR(results['returns US equity'], results['returns PE'])
-getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
-results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
-#print(results)
-
-#results['returns unsmoothed'].plot(label = 'Rt unsmoothed')
-#results['returns PE'].plot(label = 'Rt smoothed')
-#plt.title("Getmansky model with reglin weights PE/US equity")
-#plt.legend()
-#plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
-#plt.show()
+    results['returns unsmoothed'].plot(label = 'Rt unsmoothed')
+    results['returns PE'].plot(label = 'Rt smoothed')
+    plt.title("Getmansky model with reglin weights PE/US equity")
+    plt.legend()
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
+    plt.show()

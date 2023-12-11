@@ -14,6 +14,7 @@ import seaborn as sns
 import scipy.stats as stats
 import scipy
 from sklearn.linear_model import LinearRegression
+import statsmodels.api as sm
 
 # Importing packages from the prject
 from WeightsFunctions.weights import Weights

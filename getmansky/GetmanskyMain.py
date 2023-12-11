@@ -59,7 +59,7 @@ lr.fit(results['returns US equity'].values.reshape(-1, 1), results['Rt'].values.
 beta, mu = lr.coef_[0, 0], lr.intercept_[0]
 
 results['returns R'] = mu + beta*results['returns US equity']
-print(results)
+#print(results)
 
 # results['returns R'].plot(label = 'Rt unsmoothed')
 # results['returns hedge fund'].plot(label = 'Rt smoothed')
@@ -78,10 +78,26 @@ class GetmanskyModel:
     def set_default_weights(self, type_, delta = None):
         self.weights = Weights(type_, self.k, delta)
 
-    def optimize_weights(self):
-        
+    def optimize_weights_MLE(self, Rto):
+        # Xt = Rto - np.mean(Rto)
+        # n = len(Rto)
+        # def S(theta):
+        # return 1/n * np.sum([((Xt-np.mean(Xt[:i]))**2)/  )
+        # return Xt
         pass
 
+    def optimize_weights_LR(self, Benchmark, Rto):
+        df = pd.DataFrame([Benchmark, Rto], index = ['Benchmark', 'Rto']).T
+        for i in range(1, self.k+1):
+            df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
+        df.dropna(inplace = True)
+        X, y = df.drop(columns = ['Rto']), df['Rto']
+        lr = LinearRegression()
+        lr.fit(X, y)
+        print(X, y)
+        self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas
+    
+        
     def fit(self, Benchmark, Rto):
         assert len(Rto) == len(Benchmark), f"Rto and Benchmark must have the same length \n The length of Rto is {len(Rto)} \n The length of Benchmark is {len(Benchmark)}"
         _tmp = [Rto[0], Rto[1]]
@@ -99,7 +115,13 @@ class GetmanskyModel:
 
 
 getmansky = GetmanskyModel(2)
-getmansky.set_default_weights('equal')
+getmansky.optimize_weights_LR(result['returns US equity'], result['returns hedge fund'])
 getmansky.fit(result['returns US equity'].values.reshape(-1, 1), result['returns hedge fund'].values.reshape(-1,1))
 results['returns R2'] = getmansky.predict(results['returns US equity'])
 print(results)
+
+results['returns R2'].plot(label = 'Rt unsmoothed')
+results['returns hedge fund'].plot(label = 'Rt smoothed')
+plt.legend()
+#plt.savefig(f'getmansky/output/getmanskyModel/GetmanskyModel_True_LRweights_{type_}_{k}.png')
+plt.show()

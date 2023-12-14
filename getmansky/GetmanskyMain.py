@@ -107,10 +107,12 @@ if __name__ == "__main__":
 
     for i in range(2, len(results['returns unsmoothed'])):
         results['returns unsmoothed final'].iloc[i] = (results['returns unsmoothed'].iloc[i-2]+1)*(results['returns unsmoothed'].iloc[i-1]+1)*(results['returns unsmoothed'].iloc[i]+1)-1
-
-    print(results)
-    #results = results.resample('Q').last()
-    results['returns unsmoothed final'].plot(label = 'Rt unsmoothed')
+    
+    results = results.resample('Q').last()
+    results['returns unsmoothed final TR'] = (results['returns unsmoothed final']+1).cumprod()-1
+    results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    print(results.head(50))
+    results['returns unsmoothed final'].plot(label = 'Rt unsmoothed TR')
     results['returns PE'].plot(label = 'Rt smoothed')
     plt.title("Getmansky model with reglin weights PE/US equity")
     plt.legend()

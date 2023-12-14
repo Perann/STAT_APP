@@ -50,44 +50,22 @@ class GetmanskyModel:
         lr = LinearRegression()
         lr.fit(X, y)
         self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas
- 
+
     def fit(self, Benchmark, Rto):
-        assert len(Rto) == len(Benchmark), f"Rto and Benchmark must have the same length \n The length of Rto is {len(Rto)} \n The length of Benchmark is {len(Benchmark)}"
-        _tmp = [Rto[0], Rto[1]]
-        for i in range(2, len(Rto)):
-            _tmp.append((Rto[i] - np.dot(self.weights.list[1:], _tmp[-self.k:]))/self.weights.list[0])
-        Benchmark, _tmp = np.array(Benchmark[2:]), np.array(_tmp[2:])
-
-        lr = LinearRegression()
-        lr.fit(Benchmark, _tmp)
-
-        self.beta, self.mu = lr.coef_[0, 0], lr.intercept_[0]
-
-
-    def fit2(self, Benchmark, Rto):
         Benchmark, Rto = np.array(Benchmark), np.array(Rto)
+        Rto = [Rto[i*3] for i in range(len(Rto)//3)]
 
-        def error_function(beta, mu):
+        def error_function(x):
+            beta, mu = x
             Rt = mu + beta*Benchmark
             Rto_pred = [Rt[0], Rt[1], Rt[2]]
-            for i in range(3, len(Rt)):
-                Rto_pred.append(np.dot(self.weights.list[::-1], Rto_pred[-3:]))
-            Rt_comp = [Rto_pred[i*3] for i in range(len(Rt_comp)//3)]
-            return np.sum((Rto - Rt_comp)**2)
+            for _ in range(3, len(Rt)):
+                Rto_pred.append(np.dot(self.weights.list, Rto_pred[:-(self.k+2):-1]))
+            Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rto_pred)//3)])
+            return np.sum((Rto - Rto_comp)**2)
         
-        #opti = scipy.optimize.minimize(error_function, [1, 1])
-        #self.beta, self.mu = opti.x[0], opti.x[1]
-
-        return error_function(1, 1)
-        
-        # for i in range(2, len(Rto)):
-        #     _tmp.append((Rto[i] - np.dot(self.weights.list[1:], _tmp[-self.k:]))/self.weights.list[0])
-        # Benchmark, _tmp = np.array(Benchmark[2:]), np.array(_tmp[2:])
-
-        # lr = LinearRegression()
-        # lr.fit(Benchmark, _tmp)
-
-        # self.beta, self.mu = lr.coef_[0, 0], lr.intercept_[0]
+        opti = scipy.optimize.minimize(error_function, [0.5, 1])
+        self.beta, self.mu = opti.x[0], opti.x[1]
 
     def predict(self, Benchmark):
         return self.mu + self.beta*np.array(Benchmark)
@@ -108,26 +86,36 @@ if __name__ == "__main__":
 
     classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
     classic_asset_data.dropna(inplace = True)
-    classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('Q').last()
+    classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
     classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change()
     classic_asset_data = classic_asset_data.set_index('QUARTER')
     classic_asset_data.dropna(inplace = True)
 
     results = classic_asset_data.copy()
-    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['Date', 'US Equity USD Unhedged', 'Private Equity USD Unhedged'])
-
+    results = results.merge(alternative_asset_data, how = 'outer', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
+    results.dropna(inplace=True)
+    results = results[1:]
 
     getmansky = GetmanskyModel(2)
-    getmansky.optimize_weights_LR(results['returns US equity'], results['returns PE'])
+    getmansky.set_default_weights("equal")
     getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
 
-    results['returns unsmoothed'].plot(label = 'Rt unsmoothed')
+    results = results.set_index('Date')
+
+    results['returns unsmoothed final'] = 0
+
+    for i in range(2, len(results['returns unsmoothed'])):
+        results['returns unsmoothed final'].iloc[i] = (results['returns unsmoothed'].iloc[i-2]+1)*(results['returns unsmoothed'].iloc[i-1]+1)*(results['returns unsmoothed'].iloc[i]+1)-1
+
+    print(results)
+    #results = results.resample('Q').last()
+    results['returns unsmoothed final'].plot(label = 'Rt unsmoothed')
     results['returns PE'].plot(label = 'Rt smoothed')
     plt.title("Getmansky model with reglin weights PE/US equity")
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
-    #plt.show() 
+    plt.show()
 
     # import statsmodels.api as sm
     # data = sm.datasets.macrodata.load_pandas()
@@ -136,13 +124,3 @@ if __name__ == "__main__":
     # theta, sigma2  = sm.tsa.stattools.innovations_algo(acov)
     # print(acov)
     # print(theta)
-    # getmansky2 = GetmanskyModel(2)
-    # getmansky2.set_default_weights("equal")
-    # getmansky.fit2([1, 2, 3, 4, 5, 6, 7, 8, 9], [1, 2, 3])
-    # print(getmansky.predict([1, 2, 3, 4, 5, 6, 7, 8, 9]))
-
-
-
-    b = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])
-    a = np.array([1, 0, 0])
-    print(np.dot(a, b[-3:]))

@@ -74,20 +74,20 @@ class GetmanskyModel:
 
 if __name__ == "__main__":
     # Importing the dataset
-    alternative_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-    classic_asset_data = pd.read_excel('/Users/adam/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
+    alternative_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
+    classic_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
 
     # Preprocessing
     alternative_asset_data = alternative_asset_data[['QUARTER', 'Private Equity USD Unhedged']]
     alternative_asset_data.dropna(inplace = True)
-    alternative_asset_data['returns PE'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change()
+    alternative_asset_data['returns PE'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change(fill_method=None)
     alternative_asset_data.dropna(inplace = True)
     alternative_asset_data = alternative_asset_data.set_index('QUARTER')
 
     classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
-    classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change()
+    classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change(fill_method=None)
     classic_asset_data = classic_asset_data.set_index('QUARTER')
     classic_asset_data.dropna(inplace = True)
 
@@ -105,10 +105,11 @@ if __name__ == "__main__":
 
     results['returns unsmoothed final'] = 0
 
-    for i in range(2, len(results['returns unsmoothed'])):
-        results['returns unsmoothed final'].iloc[i] = (results['returns unsmoothed'].iloc[i-2]+1)*(results['returns unsmoothed'].iloc[i-1]+1)*(results['returns unsmoothed'].iloc[i]+1)-1
+    #for i in range(2, len(results['returns unsmoothed'])):
+    #    results['returns unsmoothed final'].iloc[i] = (results['returns unsmoothed'].iloc[i-2]+1)*(results['returns unsmoothed'].iloc[i-1]+1)*(results['returns unsmoothed'].iloc[i]+1)-1
     
-    #results = results.resample('Q').last()
+    results['returns unsmoothed final'] = (results['returns unsmoothed']+1).cumprod()-1
+    results = results.resample('Q').last()
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results = results.resample('Q').last()
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1

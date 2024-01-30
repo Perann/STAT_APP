@@ -17,7 +17,7 @@ from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 import sys
 
-# Importing packages from the prject
+# Importing packages from the project
 sys.path.append("getmansky/")
 from WeightsFunctions.weights import Weights
 
@@ -53,22 +53,28 @@ class GetmanskyModel:
 
     def fit(self, Benchmark, Rto):
         Benchmark, Rto = np.array(Benchmark), np.array(Rto)
-        Rto = [Rto[i*3] for i in range(len(Rto)//3)]
+        Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)])
 
-        def error_function(x):
+        def _error_function(x):
             beta, mu = x
             Rt = mu + beta*Benchmark
-            Rto_pred = [Rt[0], Rt[1], Rt[2]]
-            for _ in range(3, len(Rt)):
-                Rto_pred.append(np.dot(self.weights.list, Rto_pred[:-(self.k+2):-1]))
-            Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rto_pred)//3)])
+            Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
+            for i in range(3, len(Rto_pred)):
+                Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])) #à vérifier l'ordre des poids et du produit scal
+            Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
             return np.sum((Rto - Rto_comp)**2)
         
-        opti = scipy.optimize.minimize(error_function, [0.5, 1])
+        opti = scipy.optimize.minimize(_error_function, [0.5, 1])
         self.beta, self.mu = opti.x[0], opti.x[1]
 
     def predict(self, Benchmark):
-        return self.mu + self.beta*np.array(Benchmark)
+        Rt = self.mu + self.beta*np.array(Benchmark)
+        Rto_pred = [Rt[0], Rt[1], Rt[2]]
+        print(Rt)
+        for i in range(3, len(Rt)):
+            Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
+        return np.array(Rto_pred)
+
 
 
 
@@ -88,12 +94,11 @@ if __name__ == "__main__":
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
     classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change(fill_method=None)
-    classic_asset_data = classic_asset_data.set_index('QUARTER')
     classic_asset_data.dropna(inplace = True)
+    classic_asset_data = classic_asset_data.set_index('QUARTER')
 
     results = classic_asset_data.copy()
-    results = results.merge(alternative_asset_data, how = 'outer', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
-    results.dropna(inplace=True)
+    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
     results = results[1:]
 
     getmansky = GetmanskyModel(2)
@@ -101,13 +106,12 @@ if __name__ == "__main__":
     getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
 
+    print(results)
+
     results = results.set_index('Date')
 
     results['returns unsmoothed final'] = 0
 
-    #for i in range(2, len(results['returns unsmoothed'])):
-    #    results['returns unsmoothed final'].iloc[i] = (results['returns unsmoothed'].iloc[i-2]+1)*(results['returns unsmoothed'].iloc[i-1]+1)*(results['returns unsmoothed'].iloc[i]+1)-1
-    
     for i in range(2, len(results['returns unsmoothed'])):
         results['returns unsmoothed final'].iloc[i] = ((results['returns unsmoothed'].iloc[i-2])+(results['returns unsmoothed'].iloc[i-1])+(results['returns unsmoothed'].iloc[i]))/3
 
@@ -116,7 +120,6 @@ if __name__ == "__main__":
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results = results.resample('Q').last()
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    print(results.head(50))
     results['returns unsmoothed final_2'].plot(label = 'Rt unsmoothed TR')
     results['returns PE TR'].plot(label = 'Rt smoothed')
     plt.title("Getmansky model with reglin weights PE/US equity")
@@ -124,10 +127,10 @@ if __name__ == "__main__":
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
     plt.show()
 
-    # import statsmodels.api as sm
-    # data = sm.datasets.macrodata.load_pandas()
-    # rgdpg = data.data['realgdp'].pct_change().dropna()
-    # acov = sm.tsa.acovf(rgdpg, fft = False, nlag = 2)
-    # theta, sigma2  = sm.tsa.stattools.innovations_algo(acov)
-    # print(acov)
-    # print(theta)
+    # # import statsmodels.api as sm
+    # # data = sm.datasets.macrodata.load_pandas()
+    # # rgdpg = data.data['realgdp'].pct_change().dropna()
+    # # acov = sm.tsa.acovf(rgdpg, fft = False, nlag = 2)
+    # # theta, sigma2  = sm.tsa.stattools.innovations_algo(acov)
+    # # print(acov)
+    # # print(theta)

@@ -41,7 +41,7 @@ if __name__ == "__main__":
     results = results[1:]
     print("2", results)
 
-    results['returns PE'] = results[['returns PE']].groupby(['QUARTER']).last()
+    #results['returns PE'] = results[['returns PE']].groupby(['QUARTER']).last()
     print(results)
 
     #print("resample", results)

@@ -28,6 +28,7 @@ if __name__ == "__main__":
     classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
+    classic_asset_data = classic_asset_data[:299]
     classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change(fill_method=None)
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('QUARTER')
@@ -43,25 +44,26 @@ if __name__ == "__main__":
 
     results = results.set_index('Date')
 
-    #print(results)
-
-    # for i in range(len(results['returns PE'])):
-    #     if (i%3 == 0 or i%3 == 1):
-    #         results['returns PE'].iloc[i] = None
-
-    print(results.head(300))
+    for i in range(len(results['returns PE'])):
+        if (i%3 == 0 or i%3 == 1):
+            results['returns PE'].iloc[i] = None
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    results = results.resample('Q').last()
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    #results = results.resample('Q').last()
 
-    #print(results)
+    #to check
+    print("nb points PE : ", len(results['returns PE'].dropna()))
+    print("nb points unsmoothed : ", len(results['returns unsmoothed TR']))
 
-    # # plotting
-    # results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed')
-    # results['returns PE TR'].plot(label = 'Rt PE')
-    # plt.title("Getmansky model with reglin weights PE/US equity")
-    # plt.legend()
-    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
-    # plt.show()
+    #restricting
+    start_date = '2006-08-31'
+    end_date = '2010-09-30'
+    results = results.loc[start_date:end_date]
+
+    # plotting
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
+    plt.title("Getmansky model with reglin weights PE/US equity")
+    plt.legend()
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_unsmooth_restricted.png')
+    plt.show()

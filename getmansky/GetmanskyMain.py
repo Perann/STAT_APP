@@ -112,15 +112,16 @@ if __name__ == "__main__":
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
 
     # plotting
-    results['returns unsmoothed TR'].plot(label = 'Rt unsmoothed TR')
-    results['returns PE TR'].plot(label = 'Rt smoothed')
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed')
+    results['returns PE TR'].plot(label = 'Rt PE')
     plt.title("Getmansky model with reglin weights PE/US equity")
     plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE_best.png')
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
     plt.show()
 
     # an important point here, if we plot quarterly : we have 102 data points
     # and thus monthly is about 303 data points
+
 
 
     ########### to clean ###########

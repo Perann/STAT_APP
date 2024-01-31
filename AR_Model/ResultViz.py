@@ -21,10 +21,9 @@ cumulative_smooth = np.cumsum(smooth)
 cumulative_unsmoothed = np.cumsum(unsmoothed)
 
 
-
 #Plotting
 fig, (ax1, ax2) = plt.subplots(2, 1, sharex=True, figsize=(8, 6))
-fig.suptitle('Yield Analysis, unsmoothed by AR', fontsize=16)
+fig.suptitle('Yield Analysis, return Hedge Fund DJ USD Unhedged unsmoothed by AR', fontsize=16)
 
 ax1.plot(quarter,smooth, label = 'Observed Returns')
 ax1.plot(quarter,unsmoothed, label = 'Unsmoothed Returns')

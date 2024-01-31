@@ -107,36 +107,23 @@ if __name__ == "__main__":
 
     results = results.set_index('Date')
 
-    #print("res :", results)
-
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results = results.resample('Q').last()
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    #results = results.resample('Q').last()
 
-    print(results)
-
+    # plotting
     results['returns unsmoothed TR'].plot(label = 'Rt unsmoothed TR')
     results['returns PE TR'].plot(label = 'Rt smoothed')
     plt.title("Getmansky model with reglin weights PE/US equity")
     plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE_best.png')
     plt.show()
 
-    # for i in range(2, len(results['returns unsmoothed'])):
-    #     results['returns unsmoothed final'].iloc[i] = ((results['returns unsmoothed'].iloc[i-2])+(results['returns unsmoothed'].iloc[i-1])+(results['returns unsmoothed'].iloc[i]))/3
+    # an important point here, if we plot quarterly : we have 102 data points
+    # and thus monthly is about 303 data points
 
-    # results['returns unsmoothed final_2'] = (results['returns unsmoothed final']+1).cumprod()-1
-    # #results = results.resample('Q').last()
-    # results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    # results = results.resample('Q').last()
-    # results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    # results['returns unsmoothed final_2'].plot(label = 'Rt unsmoothed TR')
-    # results['returns PE TR'].plot(label = 'Rt smoothed')
-    # plt.title("Getmansky model with reglin weights PE/US equity")
-    # plt.legend()
-    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
-    # plt.show()
+
+    ########### to clean ###########
 
     # # import statsmodels.api as sm
     # # data = sm.datasets.macrodata.load_pandas()

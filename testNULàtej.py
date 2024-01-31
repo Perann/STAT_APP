@@ -48,8 +48,8 @@ if __name__ == "__main__":
         if (i%3 == 0 or i%3 == 1):
             results['returns PE'].iloc[i] = None
 
-    for a in results:
-        print(a)
+    for line in results.iterrows():
+        print(line)
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1

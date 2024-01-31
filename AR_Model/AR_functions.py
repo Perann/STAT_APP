@@ -44,7 +44,7 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
 
 
 if __name__ == '__main__':
-    alternative_asset_data = pd.read_excel('C:\\Users\\LENOVO\\Desktop\\EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
+    alternative_asset_data = pd.read_excel('EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
     for key in alternative_asset_data.keys()[1:]:
         alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
     data_to_analyse = alternative_asset_data[['QUARTER','Return Hedge Fund DJ - USD Unhedged']].dropna()
@@ -52,6 +52,7 @@ if __name__ == '__main__':
     datas_to_unsmooth = data_to_analyse['Return Hedge Fund DJ - USD Unhedged'].reset_index(drop = True)
     
     unsmoothed = AR_model(datas_to_unsmooth)
+
 
 
 

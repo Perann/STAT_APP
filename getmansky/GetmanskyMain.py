@@ -70,7 +70,6 @@ class GetmanskyModel:
     def predict(self, Benchmark):
         Rt = self.mu + self.beta*np.array(Benchmark)
         Rto_pred = [Rt[0], Rt[1], Rt[2]]
-        print(Rt)
         for i in range(3, len(Rt)):
             Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
         return np.array(Rto_pred)
@@ -106,26 +105,38 @@ if __name__ == "__main__":
     getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
 
-    print(results)
-
     results = results.set_index('Date')
 
-    results['returns unsmoothed final'] = 0
+    #print("res :", results)
 
-    for i in range(2, len(results['returns unsmoothed'])):
-        results['returns unsmoothed final'].iloc[i] = ((results['returns unsmoothed'].iloc[i-2])+(results['returns unsmoothed'].iloc[i-1])+(results['returns unsmoothed'].iloc[i]))/3
-
-    results['returns unsmoothed final_2'] = (results['returns unsmoothed final']+1).cumprod()-1
-    #results = results.resample('Q').last()
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results = results.resample('Q').last()
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    results['returns unsmoothed final_2'].plot(label = 'Rt unsmoothed TR')
+    #results = results.resample('Q').last()
+
+    print(results)
+
+    results['returns unsmoothed TR'].plot(label = 'Rt unsmoothed TR')
     results['returns PE TR'].plot(label = 'Rt smoothed')
     plt.title("Getmansky model with reglin weights PE/US equity")
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
     plt.show()
+
+    # for i in range(2, len(results['returns unsmoothed'])):
+    #     results['returns unsmoothed final'].iloc[i] = ((results['returns unsmoothed'].iloc[i-2])+(results['returns unsmoothed'].iloc[i-1])+(results['returns unsmoothed'].iloc[i]))/3
+
+    # results['returns unsmoothed final_2'] = (results['returns unsmoothed final']+1).cumprod()-1
+    # #results = results.resample('Q').last()
+    # results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
+    # results = results.resample('Q').last()
+    # results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    # results['returns unsmoothed final_2'].plot(label = 'Rt unsmoothed TR')
+    # results['returns PE TR'].plot(label = 'Rt smoothed')
+    # plt.title("Getmansky model with reglin weights PE/US equity")
+    # plt.legend()
+    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_reglin_{k}_PE.png')
+    # plt.show()
 
     # # import statsmodels.api as sm
     # # data = sm.datasets.macrodata.load_pandas()

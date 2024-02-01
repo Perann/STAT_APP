@@ -60,10 +60,16 @@ if __name__ == "__main__":
     end_date = '2010-09-30'
     results = results.loc[start_date:end_date]
 
-    # plotting
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
-    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
-    plt.title("Getmansky model with reglin weights PE/US equity")
-    plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_unsmooth_restricted.png')
-    plt.show()
+    # # plotting
+    # results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
+    # results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
+    # plt.title("Getmansky model with reglin weights PE/US equity")
+    # plt.legend()
+    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_unsmooth_restricted.png')
+    # plt.show()
+
+
+    df = pd.DataFrame({"col1" : [1, 2, 3, 4],
+                    "col2" : ["A", "B", "A", "B"]})
+    plot = df.groupby("col2").plot(kind="bar", title="DataFrameGroupBy Plot")
+    plot.show()

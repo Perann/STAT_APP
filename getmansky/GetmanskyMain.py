@@ -113,17 +113,17 @@ if __name__ == "__main__":
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    results = results.resample('Q').last()
+    results_no_interpolation = results.resample('Q').last() #just to view the trend
 
     # Restricting the dates
     start_date = '2006-08-31'
     end_date = '2010-09-30'
-    #results = results.loc[start_date:end_date]
+    results = results.loc[start_date:end_date]
 
     # Plotting
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed')
-    results['returns PE TR'].plot(label = 'Rt PE')
-    plt.title("Getmansky model with reglin weights PE/US equity")
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
+    plt.title("Getmansky model with eq weights PE/US equity")
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
     plt.show()

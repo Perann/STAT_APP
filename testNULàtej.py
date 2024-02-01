@@ -44,12 +44,9 @@ if __name__ == "__main__":
 
     results = results.set_index('Date')
 
-    for i in range(len(results['returns PE'])):
-        if (i%3 == 0 or i%3 == 1):
-            results['returns PE'].iloc[i] = None
-
     for line in results.iterrows():
-        print(line)
+        if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
+            line[1]['returns PE'] = None
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
@@ -63,10 +60,10 @@ if __name__ == "__main__":
     end_date = '2010-09-30'
     results = results.loc[start_date:end_date]
 
-    # # plotting
-    # results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
-    # results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
-    # plt.title("Getmansky model with reglin weights PE/US equity")
-    # plt.legend()
-    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_unsmooth_restricted.png')
-    # plt.show()
+    # plotting
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
+    plt.title("Getmansky model with reglin weights PE/US equity")
+    plt.legend()
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_unsmooth_restricted.png')
+    plt.show()

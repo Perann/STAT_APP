@@ -71,5 +71,10 @@ if __name__ == "__main__":
 
     df = pd.DataFrame({"col1" : [1, 2, 3, 4],
                     "col2" : ["A", "B", "A", "B"]})
-    plot = df.groupby("col2").plot(kind="bar", title="DataFrameGroupBy Plot")
-    plot.show()
+    #define subplot layout
+    fig, axes = plt.subplots(nrows=2, ncols=2)
+    df.plot(kind="bar", title="DataFrameGroupBy Plot", ax = axes[0,0])
+
+
+
+    plt.show()

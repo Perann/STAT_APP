@@ -121,8 +121,15 @@ if __name__ == "__main__":
     results = results.loc[start_date:end_date]
 
     # Plotting
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '')
-    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '')
+    # define subplot layout
+    fig, axes = plt.subplots(nrows=2, ncols=1)
+
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[0,0])
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[0,0])
+
+    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1,0])
+    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1,0])
+
     plt.title("Getmansky model with eq weights PE/US equity")
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')

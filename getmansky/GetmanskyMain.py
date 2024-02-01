@@ -107,11 +107,20 @@ if __name__ == "__main__":
 
     results = results.set_index('Date')
 
-    results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    results = results.resample('Q').last()
-    results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    for line in results.iterrows():
+        if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
+            line[1]['returns PE'] = None
 
-    # plotting
+    results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
+    results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    results = results.resample('Q').last()
+
+    # Restricting the dates
+    start_date = '2006-08-31'
+    end_date = '2010-09-30'
+    #results = results.loc[start_date:end_date]
+
+    # Plotting
     results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed')
     results['returns PE TR'].plot(label = 'Rt PE')
     plt.title("Getmansky model with reglin weights PE/US equity")

@@ -92,6 +92,7 @@ if __name__ == "__main__":
     classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
+    classic_asset_data.dropna(inplace = True) #to deal with the problem of february
     classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change(fill_method=None)
     classic_asset_data.dropna(inplace = True)
     classic_asset_data = classic_asset_data.set_index('QUARTER')
@@ -116,6 +117,10 @@ if __name__ == "__main__":
     results_no_interpolation = results.resample('Q').last() #just to view the trend
 
     # Restricting the dates
+    end_date_forced = '30-06-2023' #just for the visualisation
+    results = results[:end_date_forced]
+    results_no_interpolation = results_no_interpolation[:end_date_forced]
+
     start_date = '2006-08-31'
     end_date = '2010-09-30'
     results = results.loc[start_date:end_date]
@@ -123,14 +128,14 @@ if __name__ == "__main__":
     # Plotting
     # define subplot layout
     fig, axes = plt.subplots(nrows=2, ncols=1)
+    axes[0].title.set_text("Getmansky model with eq weights PE/US equity")
 
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[0,0])
-    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[0,0])
+    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
+    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
 
-    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1,0])
-    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1,0])
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
 
-    plt.title("Getmansky model with eq weights PE/US equity")
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
     plt.show()

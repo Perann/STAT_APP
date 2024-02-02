@@ -51,7 +51,7 @@ class Weights:
 if __name__ == "__main__":
     weights = Weights("equal", 5)
     print(weights)
-    weights = Weights("sumOfYears", 5)
+    weights = Weights("sumOfYears", 2)
     print(weights)
     weights = Weights("geometric", 5, 0.5)
     print(weights)

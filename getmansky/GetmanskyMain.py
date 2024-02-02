@@ -60,7 +60,7 @@ class GetmanskyModel:
             Rt = mu + beta*Benchmark
             Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
             for i in range(3, len(Rto_pred)):
-                Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])) #à vérifier l'ordre des poids et du produit scal
+                Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
             Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
             return np.sum((Rto - Rto_comp)**2)
         
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     results = results[1:]
 
     getmansky = GetmanskyModel(2)
-    getmansky.set_default_weights("equal")
+    getmansky.set_default_weights("sumOfYears")
     getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
 

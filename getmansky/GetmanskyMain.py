@@ -49,7 +49,7 @@ class GetmanskyModel:
         X, y = df.drop(columns = ['Rto']), df['Rto']
         lr = LinearRegression()
         lr.fit(X, y)
-        self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas
+        self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas (seems to be ok cf. doc)
 
     def fit(self, Benchmark, Rto):
         Benchmark, Rto = np.array(Benchmark), np.array(Rto)
@@ -123,11 +123,11 @@ if __name__ == "__main__":
 
     start_date = '2006-08-31'
     end_date = '2010-09-30'
-    results = results.loc[start_date:end_date]
+    results_sliced = results.loc[start_date:end_date]
 
     # Plotting
     # define subplot layout
-    fig, axes = plt.subplots(nrows=2, ncols=1)
+    fig, axes = plt.subplots(nrows=3, ncols=1)
     axes[0].title.set_text("Getmansky model with eq weights PE/US equity")
 
     results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
@@ -135,6 +135,9 @@ if __name__ == "__main__":
 
     results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
     results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
+
+    results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
+    results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
 
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')

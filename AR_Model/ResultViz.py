@@ -57,7 +57,7 @@ if __name__ == '__main__':
     
     #Model application
     quarter, smooth, unsmoothed = data_prep(alternative_asset_data, 'Return Commodity - USD Unhedged',)
-    #ResultViz(quarter, smooth, unsmoothed,'Return Commodity')
+    ResultViz(quarter, smooth, unsmoothed,'Return Commodity')
 
     #Autocorrel
     for k in range(1,5):

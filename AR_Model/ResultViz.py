@@ -39,21 +39,31 @@ def data_prep(dataframe, key):
     unsmoothed = AR_model(smooth)
     return quarter, smooth, unsmoothed
 
+def get_autocorrel(smoothed_data, unsmoothed_data, lag = 1):
+    pd_smooth = pd.Series(smoothed_data)
+    pd_unsmooth = pd.Series(unsmoothed_data)
+    res = (pd_smooth.autocorr(k), pd_unsmooth.autocorr(lag))
+    return res
+
 if __name__ == '__main__':
-    
     
     #Preprocessing
     alternative_asset_data = pd.read_excel('EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
     for key in alternative_asset_data.keys()[1:]:
         alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
-
     
     
     print(alternative_asset_data.keys())
-
+    
     #Model application
     quarter, smooth, unsmoothed = data_prep(alternative_asset_data, 'Return Commodity - USD Unhedged',)
-    ResultViz(quarter, smooth, unsmoothed,'Return Commodity')
+    #ResultViz(quarter, smooth, unsmoothed,'Return Commodity')
 
+    #Autocorrel
+    for k in range(1,5):
+        print(get_autocorrel(smooth,unsmoothed,k))
+
+
+    
  
  

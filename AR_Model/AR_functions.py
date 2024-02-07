@@ -32,6 +32,7 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
     performance = get_returns(alpha,datas_to_unsmooth)
     gamma = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[0]
     phi = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[1]
+    print(gamma, phi)
 
     while np.abs(gamma-gamma0) >= 10**(-3) and np.abs(phi-phi0) >= 10**(-3):
         gamma0 = gamma
@@ -53,6 +54,7 @@ if __name__ == '__main__':
     
     unsmoothed = AR_model(datas_to_unsmooth)
 
-
+    plt.plot(quarter,unsmoothed,label = 'Unsmoothed Returns')
+    plt.show()
 
 

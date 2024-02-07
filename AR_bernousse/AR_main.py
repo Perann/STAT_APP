@@ -26,6 +26,7 @@ class ARModel:
 
     def fit(self, Rto):
         Rto = np.array(Rto)
+        _array = []
 
         def _error_function(x):
             gamma, phi, alpha = x
@@ -33,15 +34,19 @@ class ARModel:
             for i in range(2, len(Rto)*3):
                 Rto_pred[i] = gamma*(1-alpha) + (alpha+phi)*Rto_pred[i-1] - alpha*phi*Rto_pred[i-2]
             Rto_pred_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rto))])
+            _array.append(Rto_pred_comp)
             return np.sum((Rto-Rto_pred_comp)**2)
         
-        opti = scipy.optimize.minimize(_error_function, [0.5, 0.5, 0.5],
+        opti = scipy.optimize.minimize(_error_function, [0.4, 0.5, 0.6],
                                         bounds = ((None, None), (None, None), (0, 1)))
+                                        #options = {'maxiter': 1})
+        print(opti.x)
+        print("tableau", _array)
         self.gamma, self.phi, self.alpha = opti.x[0], opti.x[1], opti.x[2]
 
     def predict(self, Rto):
         Rto = np.array(Rto)
-        Rto_pred = [Rto[0]/3, Rto[0]/3]
+        Rto_pred = [Rto[0]/3, np.array([1])]#Rto[0]/3]
         for i in range(2, len(Rto)*3):
             Rto_pred.append(self.gamma*(1-self.alpha) + (self.alpha+self.phi)*Rto_pred[i-1] - self.alpha*self.phi*Rto_pred[i-2])
         return np.array(Rto_pred)
@@ -72,7 +77,6 @@ if __name__ == "__main__":
     results = classic_asset_data.copy()
     results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
     results = results[1:]
-    print(results)
 
     results = results.set_index('Date')
 
@@ -80,40 +84,41 @@ if __name__ == "__main__":
         if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
             line[1]['returns PE'] = None
 
-    results = results.dropna()
-    print(results)
+    end_date_forced = '31-12-2022' 
+    results = results[:end_date_forced]
 
-    # ar_model = ARModel(order_theoritical = 1, order_appraised = 1)
-    # ar_model.fit(results['returns PE'].values.reshape(-1,1))
-    # results['returns unsmoothed'] = ar_model.predict(results['returns PE'].values.reshape(-1,1))
+    results_ = results.dropna()
+    #print(results_['returns PE'].values.reshape(-1,1))
 
-    # results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    # results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
-    # results_no_interpolation = results.resample('Q').last() #just to view the trend
+    ar_model = ARModel(order_theoritical = 1, order_appraised = 1)
+    ar_model.fit(results_['returns PE'].values.reshape(-1,1))
+    #ar_model.phi, ar_model.alpha, ar_model.gamma = 0.005, 0.5, 0.005
+    results['returns unsmoothed'] = ar_model.predict(results_['returns PE'].values.reshape(-1,1))
 
-    # # Restricting the dates
-    # end_date_forced = '30-06-2023' #just for the visualisation
-    # results = results[:end_date_forced]
-    # results_no_interpolation = results_no_interpolation[:end_date_forced]
+    results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
+    results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    results_no_interpolation = results.resample('Q').last() #just to view the trend
 
-    # start_date = '2006-08-31'
-    # end_date = '2010-09-30'
-    # results_sliced = results.loc[start_date:end_date]
+    # Restricting the dates
+    start_date = '2006-08-31'
+    end_date = '2010-09-30'
+    results_sliced = results.loc[start_date:end_date]
+    #print(results)
 
-    # # Plotting
-    # # define subplot layout
-    # fig, axes = plt.subplots(nrows=3, ncols=1)
-    # axes[0].title.set_text("Getmansky model with eq weights PE/US equity")
+    # Plotting
+    # define subplot layout
+    fig, axes = plt.subplots(nrows=3, ncols=1)
+    axes[0].title.set_text("Getmansky model with eq weights PE/US equity")
 
-    # results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
-    # results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
+    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
+    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
 
-    # results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
-    # results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
+    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
+    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
 
-    # results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
-    # results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
+    results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
+    results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
 
-    # plt.legend()
-    # #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
-    # plt.show()
+    plt.legend()
+    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
+    plt.show()

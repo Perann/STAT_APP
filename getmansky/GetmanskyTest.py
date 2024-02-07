@@ -9,7 +9,7 @@ from sklearn.linear_model import LinearRegression
 
 # Importing packages from the prject
 from WeightsFunctions.weights import Weights
-from AR_bernousse.ARmain import GetmanskyModel
+from GetmanskyMain import GetmanskyModel
 
 # Importing the dataset
 alternative_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')

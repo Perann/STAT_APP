@@ -40,6 +40,9 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
         performance = get_returns(alpha,datas_to_unsmooth)
         gamma = get_gamma_phi(performance)[0]
         phi = get_gamma_phi(performance)[1]
+    
+    print(f'gamma = {gamma}, phi = {phi}, alpha = {alpha}')
+
     return performance
     #appraised = [datas_to_unsmooth[0]]
     #for k in range (1,len(performance)):
@@ -56,8 +59,20 @@ if __name__ == '__main__':
     datas_to_unsmooth = data_to_analyse['Return Hedge Fund DJ - USD Unhedged'].reset_index(drop = True)
     
     unsmoothed = AR_model(datas_to_unsmooth)
+    gamma = 0.014053217162944536
+    phi = -0.3169362753345105
+    alpha = 0.470059725508072
 
-    plt.plot(quarter,unsmoothed,label = 'Unsmoothed Returns')
+    print(get_alpha(0.014053217162944536,-0.3169362753345105,datas_to_unsmooth))
+    a = get_returns(0.4,datas_to_unsmooth)
+
+    test = (unsmoothed[1:]-alpha*unsmoothed[:-1])/(1-alpha)
+
+    Li = [0.02]
+    for i in range(1,len(unsmoothed)):
+        Li.append((1-alpha)*unsmoothed[i] + alpha*Li[-1])
+
+    plt.plot(quarter,Li,label = 'Unsmoothed Returns')
     plt.show()
 
 

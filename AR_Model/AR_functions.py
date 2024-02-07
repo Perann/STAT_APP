@@ -40,7 +40,6 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
         performance = get_returns(alpha,datas_to_unsmooth)
         gamma = get_gamma_phi(performance)[0]
         phi = get_gamma_phi(performance)[1]
-        
     return performance
     #appraised = [datas_to_unsmooth[0]]
     #for k in range (1,len(performance)):
@@ -58,6 +57,7 @@ if __name__ == '__main__':
     
     unsmoothed = AR_model(datas_to_unsmooth)
 
-
+    plt.plot(quarter,unsmoothed,label = 'Unsmoothed Returns')
+    plt.show()
 
 

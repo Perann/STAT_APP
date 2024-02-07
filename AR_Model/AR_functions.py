@@ -9,7 +9,7 @@ def get_alpha(gamma,phi,datas):
     def function_to_minimize(alpha,data):
         res = 0
         for t in range(2,len(datas)):
-            res += (data[t] - gamma*(1-alpha) - (alpha + phi)*data[t-1] - alpha*phi*data[t-2])**2
+            res += (data[t] - gamma*(1-alpha) - (alpha + phi)*data[t-1] + alpha*phi*data[t-2])**2
         return res
     return scipy.optimize.minimize(lambda x : function_to_minimize(x, datas),1/2).x[0]
 
@@ -40,7 +40,12 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
         performance = get_returns(alpha,datas_to_unsmooth)
         gamma = get_gamma_phi(performance)[0]
         phi = get_gamma_phi(performance)[1]
+        
     return performance
+    #appraised = [datas_to_unsmooth[0]]
+    #for k in range (1,len(performance)):
+    #    appraised.append((1-alpha)*performance[k] + alpha*appraised[-1])
+    #return appraised
 
 
 if __name__ == '__main__':

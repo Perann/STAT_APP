@@ -45,6 +45,9 @@ def get_autocorrel(smoothed_data, unsmoothed_data, lag = 1):
     res = (pd_smooth.autocorr(k), pd_unsmooth.autocorr(lag))
     return res
 
+
+    
+
 if __name__ == '__main__':
     
     #Preprocessing
@@ -53,15 +56,33 @@ if __name__ == '__main__':
         alternative_asset_data['Return ' + key] = alternative_asset_data[key].pct_change()
     
     
-    print(alternative_asset_data.keys())
     
     #Model application
     quarter, smooth, unsmoothed = data_prep(alternative_asset_data, 'Return Commodity - USD Unhedged',)
-    ResultViz(quarter, smooth, unsmoothed,'Return Commodity')
+    #ResultViz(quarter, smooth, unsmoothed,'Commodity')
 
     #Autocorrel
-    for k in range(1,5):
-        print(get_autocorrel(smooth,unsmoothed,k))
+    autocorr_th = []
+    autocorr_ob = []
+    for k in range(0,51):
+        autocorr_th.append(get_autocorrel(smooth,unsmoothed,k)[1])
+        autocorr_ob.append(get_autocorrel(smooth,unsmoothed,k)[0])
+
+
+    X = np.linspace(0,50,51)
+   
+    plt.figure()
+    plt.title('Serial correlations')
+    plt.plot(X,autocorr_ob,'b--',label  = 'Serial correlation of observerved serie')
+    plt.plot(X, autocorr_th,'r--',label  = 'Serial correlation of unsmoothed serie' )
+    plt.legend()
+    plt.xlabel('Lags')
+    plt.ylabel('Serial correlation')
+    plt.grid()
+    plt.show()
+
+    #Volatilité
+    print(smooth.std(),unsmoothed.std())
 
 
     

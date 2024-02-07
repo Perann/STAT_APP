@@ -1,0 +1,3 @@
+Volatilités:
+Smoothed            Unsmoothed
+0.08962778306703212 0.14416244129670905

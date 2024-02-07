@@ -62,25 +62,32 @@ if __name__ == "__main__":
     end_date = '2010-09-30'
     results_sliced = results.loc[start_date:end_date]
 
-    print(results)
 
-    results['vol rolling 1y Rt unsmoothed'] = results['returns unsmoothed'].rolling(window = 12).std()*np.sqrt(12)
-    results['vol rolling 1y Rt PE'] = results['returns PE'].dropna().rolling(window = 4).std()*np.sqrt(4)
+    # Autocorrelation and volatility
+    results['vol rolling 1y Rt unsmoothed'] = results['returns unsmoothed'].rolling(window = 12).std()*np.sqrt(12)*100 # in %
+    results['vol rolling 1y Rt PE'] = results['returns PE'].dropna().rolling(window = 4).std()*np.sqrt(4)*100 # in %
 
-    print(results.tail(20))
+    results['vol rolling 5y Rt unsmoothed'] = results['returns unsmoothed'].rolling(window = 12*5).std()*np.sqrt(12)*100 # in %
+    results['vol rolling 5y Rt PE'] = results['returns PE'].dropna().rolling(window = 4*5).std()*np.sqrt(4)*100 # in %
+    
+    results['vol rolling 10y Rt unsmoothed'] = results['returns unsmoothed'].rolling(window = 12*10).std()*np.sqrt(12)*100 # in %
+    results['vol rolling 10y Rt PE'] = results['returns PE'].dropna().rolling(window = 4*10).std()*np.sqrt(4)*100 # in %
 
+    auto_corr = [results['returns unsmoothed TR'].autocorr(i) for i in range(50)]
+
+    results = results.dropna()
+    
     # Plotting
     # define subplot layout
     fig, axes = plt.subplots(nrows=1, ncols=1)
-    fig.suptitle('Getmansky model PE on US equity autocorrelation', fontsize=12)
-
-    auto_corr = [results['returns unsmoothed TR'].autocorr(i) for i in range(50)]
+    fig.suptitle('Getmansky model PE on US equity volatility 10y', fontsize=12)
     
-    axes.set_ylabel('volatility')
+    axes.set_ylabel('volatility (%)')
 
-    results['vol rolling 1y Rt unsmoothed'].plot(label = 'volatility PE unsmoothed')
+    results['vol rolling 10y Rt unsmoothed'].plot(label = 'volatility PE unsmoothed')
+    results['vol rolling 10y Rt PE'].plot(label = 'volatility PE')
 
 
     plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModelAutocorr_LR_weights_{2}_PE_US_equity.png')
+    #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModelvolatility_rolling_10y_LR_weights_{2}_PE_US_equity.png')
     plt.show()

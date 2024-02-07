@@ -11,14 +11,17 @@ import sys
 
 
 Rto_pred = [0.5, 1]
-alpha = 1
-phi = -0.45495298342879176
-gamma = 0.020106161007845565 
+alpha = 0.34705685478630866
+phi = -0.23199383553719802
+gamma = 0.01411024243469647
 for i in range(2, 50):
-    Rto_pred.append(gamma*(1-alpha) + (alpha+phi)*Rto_pred[i-1] - alpha*phi*Rto_pred[i-2])
+    Rto_pred.append(gamma*(1-alpha) + (alpha+phi)*Rto_pred[-1])# - alpha*phi*Rto_pred[i-2])
+    print(Rto_pred)
 
 
-print(Rto_pred)
-print(gamma*(1-alpha) + (alpha+phi)*20 - alpha*phi*20)
-plt.plot(list(range(len(Rto_pred))), Rto_pred)
+Rto_pred = np.array(Rto_pred)
+Rto_shift = Rto_pred[1:]
+Rto_pred = Rto_pred[:-1]
+Rt = (Rto_shift - alpha*Rto_pred)/(1-alpha)
+plt.plot(list(range(len(Rt))), Rt)
 plt.show()

@@ -128,7 +128,7 @@ if __name__ == "__main__":
     # Plotting
     # define subplot layout
     fig, axes = plt.subplots(nrows=3, ncols=1)
-    axes[0].title.set_text("Getmansky model with eq weights PE/US equity")
+    fig.suptitle('Getmansky model interpolation and unsmoothing PE on US equity', fontsize=12)
 
     results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
     results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
@@ -140,7 +140,7 @@ if __name__ == "__main__":
     results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
 
     plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres/GetmanskyModel_eqweight_{2}_PE_best.png')
+    #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModel_SoY_{2}_PE_US_equity.png')
     plt.show()
 
     # an important point here, if we plot quarterly : we have 102 data points

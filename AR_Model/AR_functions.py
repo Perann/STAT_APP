@@ -63,7 +63,6 @@ if __name__ == '__main__':
     phi = -0.3169362753345105
     alpha = 0.470059725508072
 
-    print(get_alpha(0.014053217162944536,-0.3169362753345105,datas_to_unsmooth))
     a = get_returns(0.4,datas_to_unsmooth)
 
     test = (unsmoothed[1:]-alpha*unsmoothed[:-1])/(1-alpha)

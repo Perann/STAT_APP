@@ -30,9 +30,12 @@ class ARModel:
 
         def _error_function(x):
             gamma, phi, alpha = x
+            Rt = [Rto[0]/3, Rto[0]/3] + [0]*(len(Rto)*3-2)
             Rto_pred = [Rto[0]/3, Rto[0]/3] + [0]*(len(Rto)*3-2)
             for i in range(2, len(Rto)*3):
-                Rto_pred[i] = gamma*(1-alpha) + (alpha+phi)*Rto_pred[i-1] - alpha*phi*Rto_pred[i-2]
+                Rt[i] = gamma + phi*Rt[i-1]
+            for i in range(2, len(Rto)*3):
+                Rto_pred[i] = alpha*Rto_pred[i-1] + (1-alpha)*Rt[i-1]
             Rto_pred_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rto))])
             _array.append(Rto_pred_comp)
             return np.sum((Rto-Rto_pred_comp)**2)
@@ -46,7 +49,7 @@ class ARModel:
 
     def predict(self, Rto):
         Rto = np.array(Rto)
-        Rto_pred = [Rto[0]/3, np.array([1])]#Rto[0]/3]
+        Rto_pred = [Rto[0]/3, Rto[0]/3]
         for i in range(2, len(Rto)*3):
             Rto_pred.append(self.gamma*(1-self.alpha) + (self.alpha+self.phi)*Rto_pred[i-1] - self.alpha*self.phi*Rto_pred[i-2])
         return np.array(Rto_pred)

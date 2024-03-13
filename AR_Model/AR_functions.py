@@ -41,8 +41,7 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
         gamma = get_gamma_phi(performance)[0]
         phi = get_gamma_phi(performance)[1]
     
-    print(f'gamma = {gamma}, phi = {phi}, alpha = {alpha}')
-
+    #print(f'gamma = {gamma}, phi = {phi}, alpha = {alpha}')
     return performance
     #appraised = [datas_to_unsmooth[0]]
     #for k in range (1,len(performance)):

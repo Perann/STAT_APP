@@ -1,0 +1,102 @@
+{% extends 'layouts/base.html' %}
+
+{% block title %} Bibliography {% endblock title %}
+
+<!-- Specific CSS goes HERE -->
+{% block stylesheets %}{% endblock stylesheets %}
+
+{% block content %}
+
+    <!-- Header -->
+    <div class="header pt-5 pt-md-8">
+    </div>
+
+    <div class="container-fluid mt--7">
+
+      <div class="row">
+        <div class="col">
+          <div class="card shadow">
+            <div class="card-header bg-transparent">
+              <h3 class="mb-0">Bibliography</h3>
+            </div>
+            <div class="card-body">
+                <table>
+                    <tr valign="top">
+                        <td align="right" class="bibtexnumber">
+                            [<a name="get">GLM04</a>]&nbsp;
+                        </td>
+                        <td class="bibtexitem">
+                            Mila Getmansky, Andrew Lo, and Igor Makarov.
+                            An econometric model of serial correlation and illiquidity in hedge
+                            fund returns.
+                            <em>Journal of Financial Economics</em>, 74(3):529--609, 2004.
+                            [<a href="https://www.sciencedirect.com/science/article/pii/S0304405X04000698" target = "_blank">link</a>]
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <td align="right" class="bibtexnumber">
+                            [<a name="coutsGoncalves">SC19</a>]&nbsp;
+                        </td>
+                        <td class="bibtexitem">
+                            Andrea&nbsp;Rossi Spencer&nbsp;Couts, Andrei S.&nbsp;Gonçalves.
+                            Unsmoothing returns of illiquid assets.
+                            <em>The Review of Financial Studies</em>, 2019.
+                            [<a href="https://wpcarey.asu.edu/sites/default/files/2021-11/andrea_rossi_seminar_paper_november_1_2019.pdf" target = "_blank">link</a>]
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <td align="right" class="bibtexnumber">
+                            [<a name="cohenMaier">KJCW81</a>]&nbsp;
+                        </td>
+                        <td class="bibtexitem">
+                            R.&nbsp;A.&nbsp;Schwartz K.&nbsp;J.&nbsp;Cohen, G. A. Hawawini S. F.&nbsp;Maier and D.&nbsp;K. Whitcomb.
+                            Friction in the trading process and the estimation of systematic
+                            risk.
+                            <em>Research and Development INSEAD</em>, 82(2), 1981.
+                            [<a href="https://flora.insead.edu/fichiersti_wp/inseadwp1982/82-02.pdf" target = "_blank">link</a>]
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <td align="right" class="bibtexnumber">
+                            [<a name="swiss">JCD19</a>]&nbsp;
+                        </td>
+                        <td class="bibtexitem">
+                            Martin&nbsp;Hoesli Jean-Christophe&nbsp;Delfim.
+                            Robust desmoothed real estate returns.
+                            <em>Swiss Finance Institute Research Paper</em>, 19(32), 2019.
+                            [<a href="https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3403691" target = "_blank">link</a>]
+                        </td>
+                    </tr>
+                    <tr valign="top">
+                        <td align="right" class="bibtexnumber">
+                            [<a name="property">pro07</a>]&nbsp;
+                        </td>
+                        <td class="bibtexitem">
+                            Index smoothing and the volatility of uk commercial property.
+                            <em>Investment Property Forum</em>, 2007.
+                            [<a href="https://www.ipf.org.uk/static/uploaded/27da2453-38e8-49ce-b5709f037272f1d0.pdf" target = "_blank">link</a>]       
+                        </td>
+                    </tr>
+                </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- this is ugly (bootstrap) but didn't have time to find a better solution -->
+      <div class="container-fluid" style = "margin-top: 22rem;">
+      </div>
+
+      {% include "includes/footer.html" %}
+
+    </div>
+
+
+{% endblock content %}
+
+<!-- Specific JS goes HERE --> 
+{% block javascripts %}
+
+<script src="/static/assets/vendor/clipboard/dist/clipboard.min.js"></script>
+
+{% endblock javascripts %}

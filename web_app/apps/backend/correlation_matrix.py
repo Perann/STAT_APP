@@ -9,9 +9,10 @@ import scipy.stats as stats
 import scipy
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
+from django.http import JsonResponse
 
 
-def correlation_matrix():
+def correlation_matrix(request):
     # Importing the dataset
     alternative_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
 
@@ -26,6 +27,12 @@ def correlation_matrix():
     alternative_asset_data.dropna(inplace = True)
     alternative_asset_data = alternative_asset_data.set_index('QUARTER')
     alternative_asset_data = alternative_asset_data[list_key_return]
+    alternative_asset_data.rename(lambda c: c.replace('returns',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('USD Unhedged',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('-',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('USD Hedged',''), axis = 1, inplace = True)
     corr = alternative_asset_data.corr()
-    corr = corr.style.format(precision = 2).background_gradient(cmap = 'RdYlGn', axis = None)
-    return corr.to_html()
+    styles = [dict(selector="th", props=[("font-size", "12px")])]
+    corr = corr.style.format(precision = 2).background_gradient(cmap = 'RdYlGn', axis = None).set_table_styles(styles)
+    safety = {'HTML' : corr.to_html(bold_rows = False)}
+    return JsonResponse(safety)

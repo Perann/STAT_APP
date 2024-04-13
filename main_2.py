@@ -43,7 +43,7 @@ if __name__ == "__main__":
     results = classic_asset_data.copy()
     results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged'])
     results = results[1:]
-    print(results)
+    #print(results)
 
     getmansky = GetmanskyModel(2)
     #getmansky.set_default_weights("equal")
@@ -61,10 +61,11 @@ if __name__ == "__main__":
     results['returns Private Equity USD Unhedged TR'] = (results['returns Private Equity USD Unhedged']+1).cumprod()-1
     results_no_interpolation = results.resample('Q').last() #just to view the trend
 
-    results_no_interpolation.drop(columns=['returns unsmoothed TR', 'returns Private Equity USD Unhedged TR', 'returns US equity', 'returns Private Equity USD Unhedged'], inplace=True)
+    results_no_interpolation.drop(columns=['returns unsmoothed TR', 'returns Private Equity USD Unhedged TR', 'returns US equity'], inplace=True)
 
     corr = results_no_interpolation.corr()
     corr.to_excel('correlation_interpolation_get.xlsx')
+    print(results_no_interpolation)
 
 
     # # Restricting the dates

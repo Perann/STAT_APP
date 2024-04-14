@@ -15,6 +15,8 @@ urlpatterns = [
 
     path('run/', get_python_data, name='run-script'),
 
+    path('', views.chart, name='chart'),
+
     path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
 
     # Matches any html file

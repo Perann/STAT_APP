@@ -16,7 +16,7 @@ urlpatterns = [
 
     path('run/', get_python_data, name='run-script'),
 
-    path('test.html', chart, name='chart'),
+    path('chart.html', chart, name='chart'),
 
     path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
 

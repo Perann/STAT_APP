@@ -8,6 +8,7 @@ from apps.home import views
 from apps.static.test import get_python_data
 from apps.backend.correlation_matrix import correlation_matrix
 from apps.backend.graph_zoom_in import chart
+from apps.backend.Data_management import load_data
 
 urlpatterns = [
 
@@ -17,6 +18,8 @@ urlpatterns = [
     path('run/', get_python_data, name='run-script'),
 
     path('chart.html', chart, name='chart'),
+
+    path('tables.html', load_data, name='chart'),
 
     path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
 

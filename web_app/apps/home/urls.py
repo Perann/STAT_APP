@@ -24,3 +24,9 @@ urlpatterns = [
     re_path(r'^.*\.*', views.pages, name='pages'),
 
 ]
+
+#temporary solution
+import apps.home.preprocessing as preprocessing
+print('Calling preprocessing method'+'.'*50)
+preprocessing.preprocessing()
+print('Preprocessing done'+'.'*50)

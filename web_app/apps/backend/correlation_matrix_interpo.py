@@ -17,11 +17,13 @@ def correlation_matrix_interpo(request):
     alternative_asset_data = pd.read_excel('./apps/tmp_data_return.xlsx')
     alternative_asset_data = alternative_asset_data.drop(['Infrastructure_Equity_Listed_-_USD_Unhedged_%y/y'], axis = 1)
     alternative_asset_data.rename(lambda c: c.replace('returns_',''), axis = 1, inplace = True)
-    alternative_asset_data.rename(lambda c: c.replace('_USD_Unhedged',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('_%y/y',''), axis = 1, inplace = True)
     alternative_asset_data.rename(lambda c: c.replace('_',' '), axis = 1, inplace = True)
-    alternative_asset_data.rename(lambda c: c.replace('_USD_Hedged',''), axis = 1, inplace = True)
-    alternative_asset_data.rename(lambda c: c.replace('%y/y',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('USD Unhedged',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('USD Hedged',''), axis = 1, inplace = True)
+
     alternative_asset_data.rename(lambda c: c.replace('-',''), axis = 1, inplace = True)
+    alternative_asset_data.rename(lambda c: c.replace('  ',' '), axis = 1, inplace = True)
 
     # Preprocessing
     alternative_asset_data = alternative_asset_data.set_index('QUARTER')

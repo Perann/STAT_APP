@@ -38,7 +38,7 @@ def chart(request):
             ) 
         ],
         layout=go.Layout(
-            title="CACA",
+            title="Returns over time",
             width=1200,
             height=800,
             margin=dict(t=100),

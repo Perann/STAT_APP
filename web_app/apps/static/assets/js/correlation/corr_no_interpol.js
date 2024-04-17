@@ -1,8 +1,8 @@
 document.addEventListener('DOMContentLoaded', function() {
-    fetchData();
+    fetchData_no_interpo();
 });
 
-function fetchData() {
+function fetchData_no_interpo() {
     fetch('/correlation-no-interpo/')
         .then(response => response.json())
         .then(data => {

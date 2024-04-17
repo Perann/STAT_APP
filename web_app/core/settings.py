@@ -124,5 +124,10 @@ STATICFILES_DIRS = (
 
 X_FRAME_OPTIONS = 'SAMEORIGIN'
 
+PLOTLY_DASH = {
+    # Flag to control location of initial argument storage
+    "cache_arguments": False,
+}
+
 #############################################################
 #############################################################

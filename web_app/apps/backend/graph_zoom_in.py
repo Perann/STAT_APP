@@ -15,7 +15,7 @@ from ..Models.AR_Model.AR_functions import AR_model
 
 
 def chart(request):
-    df = pd.read_excel('./tmp_data_return.xlsx', index_col=0)
+    df = pd.read_excel('./apps/tmp_data_return.xlsx', index_col=0)
     df = df.drop("Infrastructure_Equity_Listed_-_USD_Unhedged_%y/y", axis = 1)
     interpolate = df[df.columns[0]].resample('MS').interpolate(method='polynomial', order = 2)
     unsmoothed = AR_model(interpolate.values)

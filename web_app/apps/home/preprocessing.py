@@ -7,6 +7,7 @@ The preprocessing will be done in the manage.py file, which is the first file to
 
 # Importing packages
 import pandas as pd
+import os
 
 def tweak_alternative_data(df_):
     return (df_.assign(**{col + '_%y/y': df_[col].pct_change(fill_method = None) for col in df_.columns}) #Adding the returs
@@ -15,7 +16,12 @@ def tweak_alternative_data(df_):
 
 
 def preprocessing():
-    alternative_data_raw = pd.read_excel('/Users/adamelbernoussi/Desktop/GitHub_repos/STAT_APP/EnsaeAlternativeTimeSeries.xlsx', sheet_name='Alternative Asset', index_col=0)
+    alternative_data_raw = pd.read_excel('./original_input/EnsaeAlternativeTimeSeries.xlsx', index_col=0)
     alternative_data = tweak_alternative_data(alternative_data_raw)
     alternative_data = alternative_data[[col for col in alternative_data.columns if '%y/y' in col]]
-    alternative_data.to_excel('./tmp_data_return.xlsx')
+    alternative_data.to_excel('./apps/tmp_data_return.xlsx')
+
+
+if __name__ == '__main__':
+    preprocessing()
+    os.remove('./apps/tmp_data_return.xlsx')

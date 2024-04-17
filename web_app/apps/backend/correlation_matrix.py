@@ -25,6 +25,7 @@ def correlation_matrix(request):
             alternative_asset_data[f'returns {key}'] = alternative_asset_data[key].pct_change(fill_method=None)
             list_key_return.append(f'returns {key}')
     alternative_asset_data.dropna(inplace = True)
+    print(alternative_asset_data)
     alternative_asset_data = alternative_asset_data.set_index('QUARTER')
     alternative_asset_data = alternative_asset_data[list_key_return]
     alternative_asset_data.rename(lambda c: c.replace('returns',''), axis = 1, inplace = True)

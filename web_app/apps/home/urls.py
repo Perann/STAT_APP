@@ -7,9 +7,12 @@ from django.urls import path, re_path, include
 from apps.home import views
 from apps.static.test import get_python_data
 from apps.backend.correlation_matrix import correlation_matrix
+from apps.backend.correlation_matrix_interpo import correlation_matrix_interpo
 from apps.backend.graph_zoom_in import chart
 from apps.backend.Data_management import load_data
 from . import dash_app
+import warnings
+warnings.filterwarnings("ignore")
 
 urlpatterns = [
 
@@ -19,12 +22,14 @@ urlpatterns = [
     path('run/', get_python_data, name='run-script'),
 
     path('chart.html', chart, name='chart'),
+    
+    path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
+
+    path('correlation-interpo/', correlation_matrix_interpo, name='run-script-correlation-interpol'),
 
     path('tables.html', load_data, name='chart'),
 
     path('test.html', include('django_plotly_dash.urls')),
-
-    path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
 
     # Matches any html file
     re_path(r'^.*\.*', views.pages, name='pages'),

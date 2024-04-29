@@ -89,6 +89,52 @@ class GetmanskyModel:
                 opti = scipy.optimize.minimize(_error_function, [0.5, 1])
                 self.beta.append(opti.x[0])
                 self.mu.append(opti.x[1])
+    
+    def fit_2(self, Benchmark, Rto, window=None):
+        if not isinstance(window, (int, NoneType)):
+            passed = type(window).__name__
+            raise TypeError(f"The window argument should be of type int or NoneType (in order to use only 1 window). Here it is " + passed + '.')
+        elif isinstance(window, int) and window <= 0:
+            passed = str(window)
+            raise ValueError(f"You must pass a positive integer as window argument. Here you passed " + passed + '.')
+        
+        #Benchmark, Rto = np.array(Benchmark), np.array(Rto)
+        #Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
+
+        def _error_function(x):
+            beta, mu = x
+            Rt = mu + beta*Benchmark
+            Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
+            for i in range(3, len(Rto_pred)):
+                Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
+            Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
+            return np.sum((Rto - Rto_comp)**2)
+        
+        if window is None:
+            Benchmark, Rto = np.array(Benchmark), np.array(Rto)
+            Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
+
+            opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+            self.beta, self.mu = opti.x[0], opti.x[1]
+        else :
+            self.beta, self.mu = [], []
+            Benchmark, Rto = pd.Series(Benchmark.reshape(len(Benchmark))), pd.Series(Rto.reshape(len(Rto)))
+            for i, (Benchmark_, Rto_) in enumerate(zip(Benchmark.rolling(window), Rto.rolling(window))):
+                if i >= window:
+                    Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)
+                    Rto_ = np.array([Rto_[i*3] for i in range(len(Rto_)//3)])
+                    def _error_function(x):
+                        beta, mu = x
+                        Rt = mu + beta*Benchmark_
+                        Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
+                        for i in range(3, len(Rto_pred)):
+                            Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
+                        Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
+                        return np.sum((Rto_ - Rto_comp)**2)
+                    
+                    opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+                    self.beta.append(opti.x[0])
+                    self.mu.append(opti.x[1])
 
 
     def predict(self, Benchmark):
@@ -102,24 +148,34 @@ class GetmanskyModel:
 
 
 if __name__ == "__main__":
-    # Importing the dataset
-    alternative_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Alternative Asset')
-    classic_asset_data = pd.read_excel('/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx', sheet_name= 'Classic Asset')
+    # chaining is way faster (almost 2 times)
 
-    # Preprocessing
-    alternative_asset_data = alternative_asset_data[['QUARTER', 'Private Equity USD Unhedged']]
-    alternative_asset_data.dropna(inplace = True)
-    alternative_asset_data['returns PE'] = alternative_asset_data['Private Equity USD Unhedged'].pct_change(fill_method=None)
-    alternative_asset_data.dropna(inplace = True)
-    alternative_asset_data = alternative_asset_data.set_index('QUARTER')
+    alternative_asset_data = (
+        # Importing the dataset
+        pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Alternative Asset")
+        # Preprocessing
+        .filter(["QUARTER", "Private Equity USD Unhedged"])
+        .dropna()
+        .assign(returns_PE = (lambda x: x['Private Equity USD Unhedged'].pct_change(fill_method=None)))
+        .dropna()
+        .set_index("QUARTER")
+    )
 
-    classic_asset_data = classic_asset_data[['QUARTER', 'Date', 'US Equity USD Unhedged']]
-    classic_asset_data.dropna(inplace = True)
-    classic_asset_data = classic_asset_data.set_index('Date', drop = False).resample('M').last()
-    classic_asset_data.dropna(inplace = True) #to deal with the problem of february
-    classic_asset_data['returns US equity'] = classic_asset_data['US Equity USD Unhedged'].pct_change(fill_method=None)
-    classic_asset_data.dropna(inplace = True)
-    classic_asset_data = classic_asset_data.set_index('QUARTER')
+    classic_asset_data = (
+        # Importing the dataset
+        pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Classic Asset")
+        # Preprocessing
+        .filter(['QUARTER', 'Date', 'US Equity USD Unhedged'])
+        .dropna()
+        .set_index('Date', drop = False)
+        .resample('M')
+        .last()
+        .dropna()
+        .assign(returns_US_equity = (lambda x: x['US Equity USD Unhedged'].pct_change(fill_method=None)))
+        .dropna()
+        .set_index("QUARTER")
+    )
+
 
     results = classic_asset_data.copy()
     results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
@@ -127,17 +183,17 @@ if __name__ == "__main__":
 
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
-    getmansky.fit(results['returns US equity'].values.reshape(-1, 1), results['returns PE'].values.reshape(-1,1))
-    results['returns unsmoothed'] = getmansky.predict(results['returns US equity'])
+    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
+    results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
 
     results = results.set_index('Date')
 
     for line in results.iterrows():
         if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
-            line[1]['returns PE'] = None
+            line[1]['returns_PE'] = None
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    results['returns PE TR'] = (results['returns PE']+1).cumprod()-1
+    results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
     results_no_interpolation = results.resample('Q').last() #just to view the trend
 
     # Restricting the dates

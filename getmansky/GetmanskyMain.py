@@ -16,6 +16,7 @@ import scipy
 from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 import sys
+from types import NoneType
 
 # Importing packages from the project
 sys.path.append("getmansky/")
@@ -51,9 +52,13 @@ class GetmanskyModel:
         lr.fit(X, y)
         self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas (seems to be ok cf. doc)
 
-    def fit(self, Benchmark, Rto):
+    def fit(self, Benchmark, Rto, window=None):
+        if not isinstance(window, (int, NoneType)):
+            passed_type = type(window).__name__
+            raise TypeError(f"The window argument should be of type int or NoneType (in order to use only 1 window). Here it is " + passed_type + '.')
+        
         Benchmark, Rto = np.array(Benchmark), np.array(Rto)
-        Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)])
+        Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
 
         def _error_function(x):
             beta, mu = x
@@ -64,8 +69,27 @@ class GetmanskyModel:
             Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
             return np.sum((Rto - Rto_comp)**2)
         
-        opti = scipy.optimize.minimize(_error_function, [0.5, 1])
-        self.beta, self.mu = opti.x[0], opti.x[1]
+        if window is None:
+            opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+            self.beta, self.mu = opti.x[0], opti.x[1]
+        else :
+            self.beta, self.mu = [], []
+            n = len(Benchmark)
+            for i in range(len(Benchmark) - window):
+                #Benchmark_, Rto_ = Benchmark[i:i+window], Rto[]
+                def _error_function(x):
+                    beta, mu = x
+                    Rt = mu + beta*Benchmark_
+                    Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
+                    for i in range(3, len(Rto_pred)):
+                        Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
+                    Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
+                    return np.sum((Rto_ - Rto_comp)**2)
+                
+                opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+                self.beta.append(opti.x[0])
+                self.mu.append(opti.x[1])
+
 
     def predict(self, Benchmark):
         Rt = self.mu + self.beta*np.array(Benchmark)

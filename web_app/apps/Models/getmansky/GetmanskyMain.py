@@ -19,8 +19,8 @@ import sys
 from types import NoneType
 
 # Importing packages from the project
-sys.path.append("getmansky/")
-from WeightsFunctions.weights import Weights
+#sys.path.append("getmansky/")
+from ..getmansky.WeightsFunctions.weights import Weights
 
 
 # Class of the Getmansky model
@@ -123,9 +123,9 @@ if __name__ == "__main__":
         # Importing the dataset
         pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Alternative Asset")
         # Preprocessing
-        .filter(["QUARTER", "Global Property USD Unhedged"])
+        .filter(["QUARTER", "Private Equity USD Unhedged"])
         .dropna()
-        .assign(returns_PE = (lambda x: x['Global Property USD Unhedged'].pct_change(fill_method=None)))
+        .assign(returns_PE = (lambda x: x['Private Equity USD Unhedged'].pct_change(fill_method=None)))
         .dropna()
         .set_index("QUARTER")
     )
@@ -146,7 +146,7 @@ if __name__ == "__main__":
     )
 
     results = classic_asset_data.copy()
-    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Global Property USD Unhedged'])
+    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
     results = results[1:]
 
     getmansky = GetmanskyModel(2)

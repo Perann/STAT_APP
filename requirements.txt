@@ -24,3 +24,4 @@ whitenoise>=5.3.0
 dash==2.9.3
 plotly>=5.20.0
 django_plotly_dash>=2.3.1
+xlsxwriter>=3.2.0

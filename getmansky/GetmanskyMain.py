@@ -54,54 +54,13 @@ class GetmanskyModel:
 
     def fit(self, Benchmark, Rto, window=None):
         if not isinstance(window, (int, NoneType)):
-            passed_type = type(window).__name__
-            raise TypeError(f"The window argument should be of type int or NoneType (in order to use only 1 window). Here it is " + passed_type + '.')
-        
-        Benchmark, Rto = np.array(Benchmark), np.array(Rto)
-        Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
-
-        def _error_function(x):
-            beta, mu = x
-            Rt = mu + beta*Benchmark
-            Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
-            for i in range(3, len(Rto_pred)):
-                Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
-            Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
-            return np.sum((Rto - Rto_comp)**2)
-        
-        if window is None:
-            opti = scipy.optimize.minimize(_error_function, [0.5, 1])
-            self.beta, self.mu = opti.x[0], opti.x[1]
-        else :
-            self.beta, self.mu = [], []
-            n = len(Benchmark)
-            for i in range(len(Benchmark) - window):
-                #Benchmark_, Rto_ = Benchmark[i:i+window], Rto[]
-                def _error_function(x):
-                    beta, mu = x
-                    Rt = mu + beta*Benchmark_
-                    Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
-                    for i in range(3, len(Rto_pred)):
-                        Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
-                    Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
-                    return np.sum((Rto_ - Rto_comp)**2)
-                
-                opti = scipy.optimize.minimize(_error_function, [0.5, 1])
-                self.beta.append(opti.x[0])
-                self.mu.append(opti.x[1])
-    
-    def fit_2(self, Benchmark, Rto, window=None):
-        if not isinstance(window, (int, NoneType)):
             passed = type(window).__name__
             raise TypeError(f"The window argument should be of type int or NoneType (in order to use only 1 window). Here it is " + passed + '.')
         elif isinstance(window, int) and window <= 0:
             passed = str(window)
             raise ValueError(f"You must pass a positive integer as window argument. Here you passed " + passed + '.')
-        
-        #Benchmark, Rto = np.array(Benchmark), np.array(Rto)
-        #Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
 
-        def _error_function(x):
+        def _error_function(x, Benchmark, Rto):
             beta, mu = x
             Rt = mu + beta*Benchmark
             Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
@@ -114,31 +73,41 @@ class GetmanskyModel:
             Benchmark, Rto = np.array(Benchmark), np.array(Rto)
             Rto = np.array([Rto[i*3] for i in range(len(Rto)//3)]) #because we broadcasted during the preprocessing...
 
-            opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+            opti = scipy.optimize.minimize(
+                fun=_error_function, 
+                x0=[0.5, 1],
+                args=(Benchmark, Rto)
+                )
             self.beta, self.mu = opti.x[0], opti.x[1]
         else :
             self.beta, self.mu = [], []
             Benchmark, Rto = pd.Series(Benchmark.reshape(len(Benchmark))), pd.Series(Rto.reshape(len(Rto)))
             for i, (Benchmark_, Rto_) in enumerate(zip(Benchmark.rolling(window), Rto.rolling(window))):
                 if i >= window:
-                    Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)
+                    if Rto_.iloc[0] == Rto_.iloc[1] and Rto_.iloc[1] == Rto_.iloc[2]:
+                        Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)                        
+                    elif Rto_.iloc[0] == Rto_.iloc[1] and Rto_.iloc[1] != Rto_.iloc[2]:
+                        Benchmark_, Rto_ = np.array(Benchmark_.iloc[2:]), np.array(Rto_.iloc[2:])
+                    elif Rto_.iloc[0] != Rto_.iloc[1] and Rto_.iloc[1] == Rto_.iloc[2]:
+                        Benchmark_, Rto_ = np.array(Benchmark_.iloc[1:]), np.array(Rto_.iloc[1:])
+
                     Rto_ = np.array([Rto_[i*3] for i in range(len(Rto_)//3)])
-                    def _error_function(x):
-                        beta, mu = x
-                        Rt = mu + beta*Benchmark_
-                        Rto_pred = [Rt[0], Rt[1], Rt[2]] + [0]*(len(Rt)-3)
-                        for i in range(3, len(Rto_pred)):
-                            Rto_pred[i] = np.dot(self.weights.list, np.array(Rt[i-2:i+1])[::-1]) #ok with the order of the weights (checked)
-                        Rto_comp = np.array([(1+Rto_pred[i*3])*(1+Rto_pred[i*3+1])*(1+Rto_pred[i*3+2])-1 for i in range(len(Rt)//3)])
-                        return np.sum((Rto_ - Rto_comp)**2)
-                    
-                    opti = scipy.optimize.minimize(_error_function, [0.5, 1])
+
+                    opti = scipy.optimize.minimize(
+                        fun=_error_function, 
+                        x0=[0.5, 1],
+                        args=(Benchmark_, Rto_)
+                        )
                     self.beta.append(opti.x[0])
                     self.mu.append(opti.x[1])
+                    
 
 
     def predict(self, Benchmark):
-        Rt = self.mu + self.beta*np.array(Benchmark)
+        if isinstance(self.beta, list) and isinstance(self.mu, list):
+            Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
+        else:
+            Rt = self.mu + self.beta*np.array(Benchmark)
         Rto_pred = [Rt[0], Rt[1], Rt[2]]
         for i in range(3, len(Rt)):
             Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
@@ -175,7 +144,6 @@ if __name__ == "__main__":
         .dropna()
         .set_index("QUARTER")
     )
-
 
     results = classic_asset_data.copy()
     results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])

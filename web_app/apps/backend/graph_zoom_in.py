@@ -16,6 +16,7 @@ from ..Models.AR_Model.AR_functions import AR_model
 
 def chart(request):
     df = pd.read_excel('./apps/tmp_data_return.xlsx', index_col=0)
+    classic_data = pd.read_excel('./apps/input.xlsx', index_col=0, sheet_name="Classic Asset")
     df = df.drop("Infrastructure_Equity_Listed_-_USD_Unhedged_%y/y", axis = 1)
     interpolate = df[df.columns[0]].resample('MS').interpolate(method='polynomial', order = 2)
     unsmoothed = AR_model(interpolate.values)
@@ -87,6 +88,25 @@ def chart(request):
                     yanchor = 'top',
                     pad={"r": -1000, "t": 10},
                     x = 0,
+                    xanchor = 'left',
+                ),
+                dict(
+                    buttons=[
+                        dict(
+                            args=[{
+                                
+                            }],
+                            label=col,
+                            method="restyle",
+                        )
+                        for col in classic_data.columns
+                    ],
+                    direction="down",
+                    showactive=True,
+                    y = 1.1,
+                    yanchor = 'top',
+                    pad={"r": -1000, "t": 10},
+                    x = 0.5,
                     xanchor = 'left',
                 ),
             ]

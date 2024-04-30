@@ -10,6 +10,7 @@ from apps.backend.correlation_matrix import correlation_matrix
 from apps.backend.correlation_matrix_interpo import correlation_matrix_interpo
 from apps.backend.graph_zoom_in import chart
 from apps.backend.Data_management import load_data
+from apps.home.views import download_file
 from . import dash_app
 import warnings
 warnings.filterwarnings("ignore")
@@ -26,6 +27,8 @@ urlpatterns = [
     path('correlation-no-interpo/', correlation_matrix, name='run-script-correlation'),
 
     path('correlation-interpo/', correlation_matrix_interpo, name='run-script-correlation-interpol'),
+
+    path('download/', download_file, name = 'download'),
 
     path('tables.html', load_data, name='chart'),
 

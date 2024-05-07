@@ -20,7 +20,7 @@ from types import NoneType
 
 # Importing packages from the project
 #sys.path.append("getmansky/")
-from ..getmansky.WeightsFunctions.weights import Weights
+from WeightsFunctions.weights import Weights
 
 
 # Class of the Getmansky model
@@ -78,6 +78,8 @@ class GetmanskyModel:
                 x0=[0.5, 1],
                 args=(Benchmark, Rto)
                 )
+            if not opti.success:
+                print("opti not success")
             self.beta, self.mu = opti.x[0], opti.x[1]
         else :
             self.beta, self.mu = [], []

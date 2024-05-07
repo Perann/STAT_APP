@@ -151,49 +151,50 @@ if __name__ == "__main__":
 
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
-    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
+    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1), window=24)
+    results['returns unsmoothed'] = np.nan
     results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
+    print(results)
+    # results = results.set_index('Date')
 
-    results = results.set_index('Date')
+    # for index, line in results.iterrows():
+    #     if index.month in [1, 2, 4, 5, 7, 8, 10, 11]:
+    #         results.loc[index, 'returns_PE'] = None
 
-    for line in results.iterrows():
-        if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
-            line[1]['returns_PE'] = None
+    # print(getmansky.beta, getmansky.mu)
+    # results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
+    # results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
+    # results_no_interpolation = results.resample('QE').last() #just to view the trend
+    # print(results)
+    # # Restricting the dates
+    # end_date_forced = '30-06-2023' #just for the visualisation
+    # results = results[:end_date_forced]
+    # results_no_interpolation = results_no_interpolation[:end_date_forced]
 
-    results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
-    results_no_interpolation = results.resample('Q').last() #just to view the trend
+    # start_date = '2006-08-31'
+    # end_date = '2010-09-30'
+    # results_sliced = results.loc[start_date:end_date]
 
-    # Restricting the dates
-    end_date_forced = '30-06-2023' #just for the visualisation
-    results = results[:end_date_forced]
-    results_no_interpolation = results_no_interpolation[:end_date_forced]
+    # # Plotting
+    # # define subplot layout
+    # fig, axes = plt.subplots(nrows=3, ncols=1)
+    # fig.suptitle('Getmansky model interpolation and unsmoothing PE on US equity', fontsize=12)
 
-    start_date = '2006-08-31'
-    end_date = '2010-09-30'
-    results_sliced = results.loc[start_date:end_date]
+    # results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
+    # results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
 
-    # Plotting
-    # define subplot layout
-    fig, axes = plt.subplots(nrows=3, ncols=1)
-    fig.suptitle('Getmansky model interpolation and unsmoothing PE on US equity', fontsize=12)
+    # results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
+    # results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
 
-    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
-    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
+    # results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
+    # results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
 
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
-    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
-
-    results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
-    results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
-
-    plt.legend()
+    # plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModel_SoY_{2}_PE_US_equity.png')
-    plt.show()
+    #plt.show()
 
     # an important point here, if we plot quarterly : we have 102 data points
     # and thus monthly is about 303 data points
-
 
 
     ########### to clean ###########

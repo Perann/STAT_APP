@@ -4,7 +4,6 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from statsmodels.tsa.arima.model import ARIMA
 
-
 def get_alpha(gamma,phi,datas):
     def function_to_minimize(alpha,data):
         res = 0

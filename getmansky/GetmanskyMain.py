@@ -19,7 +19,7 @@ import sys
 from types import NoneType
 
 # Importing packages from the project
-sys.path.append("getmansky/")
+#sys.path.append("getmansky/")
 from WeightsFunctions.weights import Weights
 
 
@@ -151,9 +151,7 @@ if __name__ == "__main__":
 
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
-    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1), window = None)
-    results['returns unsmoothed'] = np.nan
-    #results = results.iloc[24:]
+    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
 
     results = results.set_index('Date')

@@ -20,7 +20,7 @@ from types import NoneType
 
 # Importing packages from the project
 #sys.path.append("getmansky/")
-from WeightsFunctions.weights import Weights
+from ..getmansky.WeightsFunctions.weights import Weights
 
 
 # Class of the Getmansky model

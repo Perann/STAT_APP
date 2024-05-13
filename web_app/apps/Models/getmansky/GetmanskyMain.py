@@ -80,10 +80,10 @@ class GetmanskyModel:
                 fun=_error_function, 
                 x0=[0.5, 1],
                 args=(Benchmark, Rto)
-                )
-            if not opti.success:
-                warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
-                #raise ValueError
+            )
+            
+            if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+
             self.beta, self.mu = opti.x[0], opti.x[1]
         else :
             self.beta, self.mu = [], []
@@ -103,28 +103,35 @@ class GetmanskyModel:
                         fun=_error_function, 
                         x0=[0.5, 1],
                         args=(Benchmark_, Rto_)
-                        )
-                    if not opti.success:
-                        warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
-                        #raise ValueError
+                    )
+                    
+                    if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+
                     self.beta.append(opti.x[0])
                     self.mu.append(opti.x[1])
 
-    def predict(self, Benchmark):
+    def predict(self, Benchmark, rebase = None):
         if isinstance(self.beta, list) and isinstance(self.mu, list):
             Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
+            rebase = rebase[-len(self.beta):]
         else:
             Rt = self.mu + self.beta*np.array(Benchmark)
-        Rto_pred = [Rt[0], Rt[1], Rt[2]]
-        for i in range(3, len(Rt)):
-            Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
-        return np.array(Rto_pred)
-
-    def predict_theorique(self, Benchmark):
-        if isinstance(self.beta, list) and isinstance(self.mu, list):
-            Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
-        else:
-            Rt = self.mu + self.beta*np.array(Benchmark)
+        if isinstance(rebase, np.ndarray):
+            # handling edge cases of first values
+            if rebase[0] == rebase[1] and rebase[1] == rebase[2]:
+                start = 2 # basicly nothing to do around here                      
+            elif rebase[0] == rebase[1] and rebase[1] != rebase[2]:
+                start = 4
+                Rt[1] = ((1+rebase[1])/(1+Rt[0])) - 1
+            elif rebase[0] != rebase[1] and rebase[1] == rebase[2]:
+                start = 3
+                Rt[0] = rebase[0]
+            for i in range(start, len(rebase), 3):
+                Rt[i] = ((1+rebase[i])/((1+Rt[i-2])*(1+Rt[i-1]))) - 1
+                
+        elif rebase is not None:
+            raise ValueError("Warning ! rebase argument should be None (no rebase) or a np.ndarray")
+        
         return np.array(Rt)
 
 
@@ -151,7 +158,7 @@ if __name__ == "__main__":
         .filter(['QUARTER', 'Date', 'US Equity USD Unhedged'])
         .dropna()
         .set_index('Date', drop = False)
-        .resample('M')
+        .resample('ME')
         .last()
         .dropna()
         .assign(returns_US_equity = (lambda x: x['US Equity USD Unhedged'].pct_change(fill_method=None)))
@@ -166,7 +173,7 @@ if __name__ == "__main__":
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
     getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
-    results['returns unsmoothed'] = getmansky.predict_theorique(results['returns_US_equity'])
+    results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
 
     results = results.set_index('Date')
 
@@ -176,7 +183,7 @@ if __name__ == "__main__":
 
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
-    results_no_interpolation = results.resample('Q').last() #just to view the trend
+    results_no_interpolation = results.resample('QE').last() #just to view the trend
 
     # Restricting the dates
     end_date_forced = '30-06-2023' #just for the visualisation

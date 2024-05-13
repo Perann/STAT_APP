@@ -17,11 +17,14 @@ from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 import sys
 from types import NoneType
+import warnings
 
 # Importing packages from the project
 #sys.path.append("getmansky/")
-from ..getmansky.WeightsFunctions.weights import Weights
-
+try:
+    from ..getmansky.WeightsFunctions.weights import Weights
+except ImportError:
+    from WeightsFunctions.weights import Weights
 
 # Class of the Getmansky model
 class GetmanskyModel:
@@ -79,7 +82,8 @@ class GetmanskyModel:
                 args=(Benchmark, Rto)
                 )
             if not opti.success:
-                print("opti not success")
+                warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+                #raise ValueError
             self.beta, self.mu = opti.x[0], opti.x[1]
         else :
             self.beta, self.mu = [], []
@@ -100,10 +104,11 @@ class GetmanskyModel:
                         x0=[0.5, 1],
                         args=(Benchmark_, Rto_)
                         )
+                    if not opti.success:
+                        warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+                        #raise ValueError
                     self.beta.append(opti.x[0])
                     self.mu.append(opti.x[1])
-                    
-
 
     def predict(self, Benchmark):
         if isinstance(self.beta, list) and isinstance(self.mu, list):
@@ -114,6 +119,13 @@ class GetmanskyModel:
         for i in range(3, len(Rt)):
             Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
         return np.array(Rto_pred)
+
+    def predict_theorique(self, Benchmark):
+        if isinstance(self.beta, list) and isinstance(self.mu, list):
+            Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
+        else:
+            Rt = self.mu + self.beta*np.array(Benchmark)
+        return np.array(Rt)
 
 
 
@@ -154,7 +166,7 @@ if __name__ == "__main__":
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
     getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
-    results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
+    results['returns unsmoothed'] = getmansky.predict_theorique(results['returns_US_equity'])
 
     results = results.set_index('Date')
 

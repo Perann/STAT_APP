@@ -113,6 +113,13 @@ class GetmanskyModel:
             Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
         return np.array(Rto_pred)
 
+    def predict_theorique(self, Benchmark):
+        if isinstance(self.beta, list) and isinstance(self.mu, list):
+            Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
+        else:
+            Rt = self.mu + self.beta*np.array(Benchmark)
+        return np.array(Rt)
+
 
 
 

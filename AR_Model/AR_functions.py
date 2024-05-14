@@ -42,6 +42,12 @@ def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
     
     return performance
  
+def AR_rebase(serie ,quarter_returns, window = None) -> 'numpy.ndarrray' :
+    if  window == None:
+        serie = AR_model(serie)
+        for k in range(len(quarter_returns)):
+            serie[k+2] = (1 + quarter_returns[k])/((1 + serie[k+1])*(1 + serie[k])) - 1
+        return serie
 
 if __name__ == '__main__':
    

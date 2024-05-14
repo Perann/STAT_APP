@@ -1,0 +1,111 @@
+import numpy as np
+import scipy 
+import pandas as pd
+import matplotlib.pyplot as plt
+from statsmodels.tsa.arima.model import ARIMA
+
+def get_alpha(gamma,phi,datas):
+    def function_to_minimize(alpha,data):
+        res = 0
+        for t in range(2,len(datas)):
+            res += (data[t] - gamma*(1-alpha) - (alpha + phi)*data[t-1] + alpha*phi*data[t-2])**2
+        return res
+    return scipy.optimize.minimize(lambda x : function_to_minimize(x, datas),1/2).x[0]
+
+def get_returns(alpha,ObsReturned):
+    TrueReturn = np.zeros(len(ObsReturned))
+    TrueReturn[0] = ObsReturned[0]
+    for i in range(1,len(ObsReturned)):
+        TrueReturn[i] = (ObsReturned[i]-alpha*ObsReturned[i-1])/(1-alpha)
+    return TrueReturn
+
+def get_gamma_phi(Returns):
+    model = ARIMA(Returns, order=(1, 0, 0))
+    results = model.fit()
+    coeff = results.params
+    return (coeff[0],coeff[1])
+
+def AR_model(datas_to_unsmooth,gamma0 = 1,phi0= 1):
+    alpha = get_alpha(gamma0,phi0,datas_to_unsmooth)
+    performance = get_returns(alpha,datas_to_unsmooth)
+    gamma = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[0]
+    phi = get_gamma_phi(get_returns(get_alpha(gamma0,phi0,datas_to_unsmooth),datas_to_unsmooth))[1]
+
+    while np.abs(gamma-gamma0) >= 10**(-3) and np.abs(phi-phi0) >= 10**(-3):
+        gamma0 = gamma
+        phi0 = phi
+        alpha = get_alpha(gamma,phi,datas_to_unsmooth)
+        performance = get_returns(alpha,datas_to_unsmooth)
+        gamma = get_gamma_phi(performance)[0]
+        phi = get_gamma_phi(performance)[1]
+    
+    return performance
+ 
+def quarter_rebase(data : 'numpy.ndarray', quarter_return : 'float64') -> 'numpy.ndarray':
+    data[-1] = (1 + quarter_return)/(1 + data[-2])*(1 + data[-3]) - 1 
+    return data[-1]
+
+def AR_rebase(serie ,quarter_returns, window = None) -> 'numpy.ndarrray' :
+    if  window == None:
+        serie = AR_model(serie)
+        for k in range(len(quarter_returns)):
+            serie[k+2] = ((1 + quarter_returns[k])/((1 + serie[k+1])*(1 + serie[k]))) - 1
+        return serie
+
+
+    
+if __name__ == '__main__':
+    
+    alternative_data_raw = pd.read_excel('EnsaeAlternativeTimeSeries.xlsx', sheet_name='Alternative Asset', index_col=0)
+
+    def tweak_alternative_data(df_):
+        return (df_.assign(**{col + '_%y/y': df_[col].pct_change(fill_method = None) for col in df_.columns}) #Adding the returs
+            .set_index(pd.to_datetime(df_.index)) 
+            .rename(lambda c: c.replace(' ','_'), axis = 1))
+    
+    
+    def cumulated_returns(serie):
+        return (1 + serie).cumprod() - 1
+
+    alternative_data = tweak_alternative_data(alternative_data_raw)
+
+    #test.plot()
+    
+    def data_unsmoothing(df_):
+        new = df_.resample('MS').interpolate(method='polynomial', order = 2).pct_change().dropna().iloc[2:]
+
+        for col in df_.columns:
+            print('there')
+            quarter = df_[col].pct_change().dropna().iloc[1:].values
+            new[col + '_unsmoothed'] = AR_rebase(new[col].values, quarter)
+        return new
+    
+    unsmoothed = data_unsmoothing(alternative_data.iloc[:,0:9])
+    
+    #(unsmoothed.iloc[:,[0,9]].dropna().agg(cumulated_returns)
+    #.plot(grid = True, cmap = 'RdYlGn',ylabel='cumulated returns')
+    #.legend())
+    
+    print(unsmoothed.columns)
+    fig, axis = plt.subplots()
+    
+    (alternative_data['Commodity_-_USD_Unhedged']
+     .resample('MS')
+     .interpolate('polynomial', order = 2)
+     .pct_change()
+     .loc['2002-01-01':'2004-01-01']
+     .agg(cumulated_returns)
+    .iloc[::3]
+    .plot(ax = axis, style = 'o--', grid = True, c = 'red')
+    .legend())
+
+    (unsmoothed.loc['2002-01-01':'2004-01-01',unsmoothed.columns[9]]
+     .agg(cumulated_returns)
+    .plot(ax = axis, style = 'o',grid = True, c='green')
+    .legend())
+
+    axis.set_title('Year 2018 interpolation')
+    plt.show()
+  
+
+

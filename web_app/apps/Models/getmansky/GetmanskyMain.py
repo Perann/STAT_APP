@@ -57,22 +57,22 @@ class GetmanskyModel:
         df = pd.DataFrame([benchmark, rto], index = ['Benchmark', 'Rto']).T
         for i in range(1, self.k+1):
             df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
+        df["1"] = 1
         df.dropna(inplace = True)
         X, y = df.drop(columns = ['Rto']), df['Rto']
     
         def _error_function(x, X, y):
             X = np.dot(X, x)
-            print(y[2::3])
             return np.sum((y[2::3] - np.array([(1+X[3*i])*(1+X[3*i+1])*(1+X[3*i+2])-1 for i in range(len(X)//3)]))**2)
         
         opti = scipy.optimize.minimize(
                 fun=_error_function, 
-                x0=[0.5]*(self.k + 1),
+                x0=[0.5]*(self.k + 2),
                 args = (X, y),
-                bounds = ((0,None),(0,None), (0,None))
+                bounds = ((0,None),(0,None), (0,None), (None, None))
             )
         if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
-        self.weights.list = opti.x/np.sum(opti.x)
+        self.weights.list = opti.x[:(self.k+1)]/np.sum(opti.x[:(self.k+1)])
 
     def fit(self, Benchmark, Rto, window=None):
         if not isinstance(window, (int, NoneType)):

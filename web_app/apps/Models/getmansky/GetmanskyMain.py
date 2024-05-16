@@ -46,14 +46,34 @@ class GetmanskyModel:
         pass
 
     def optimize_weights_LR(self, Benchmark, Rto):
-        df = pd.DataFrame([Benchmark, Rto], index = ['Benchmark', 'Rto']).T
+        Benchmark_, Rto_ = Benchmark, Rto
+        if Rto_[0] == Rto_[1] and Rto_[1] == Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)                        
+        elif Rto_[0] == Rto_[1] and Rto_[1] != Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_[2:]), np.array(Rto_[2:])
+        elif Rto_[0] != Rto_[1] and Rto_[1] == Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_[1:]), np.array(Rto_[1:])
+        rto = [Rto_[i*3] for i in range(len(Rto_)//3)]
+        benchmark = [(1+Benchmark_[i*3])*(1+Benchmark_[i*3+1])*(1+Benchmark_[i*3+2])-1 for i in range(len(Rto_)//3)]
+        rto, benchmark = pd.Series(rto), pd.Series(benchmark)
+        df = pd.DataFrame([benchmark, rto], index = ['Benchmark', 'Rto']).T
         for i in range(1, self.k+1):
             df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
         df.dropna(inplace = True)
         X, y = df.drop(columns = ['Rto']), df['Rto']
-        lr = LinearRegression()
-        lr.fit(X, y)
-        self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas (seems to be ok cf. doc)
+
+        def _error_function(x, X, y):
+            X = np.dot(X, x)
+            return np.sum((y - X)**2)
+        
+        opti = scipy.optimize.minimize(
+                fun=_error_function, 
+                x0=[0.5]*(self.k + 1),
+                args = (X, y),
+                bounds = ((0,None),(0,None), (0,None))
+            )
+        if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+        self.weights.list = opti.x/np.sum(opti.x)
 
     def fit(self, Benchmark, Rto, window=None):
         if not isinstance(window, (int, NoneType)):

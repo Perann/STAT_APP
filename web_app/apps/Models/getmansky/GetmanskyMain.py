@@ -53,18 +53,17 @@ class GetmanskyModel:
             Benchmark_, Rto_ = np.array(Benchmark_[2:]), np.array(Rto_[2:])
         elif Rto_[0] != Rto_[1] and Rto_[1] == Rto_[2]:
             Benchmark_, Rto_ = np.array(Benchmark_[1:]), np.array(Rto_[1:])
-        rto = [Rto_[i*3] for i in range(len(Rto_)//3)]
-        benchmark = [(1+Benchmark_[i*3])*(1+Benchmark_[i*3+1])*(1+Benchmark_[i*3+2])-1 for i in range(len(Rto_)//3)]
-        rto, benchmark = pd.Series(rto), pd.Series(benchmark)
+        rto, benchmark = pd.Series(Rto_), pd.Series(Benchmark_)
         df = pd.DataFrame([benchmark, rto], index = ['Benchmark', 'Rto']).T
         for i in range(1, self.k+1):
             df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
         df.dropna(inplace = True)
         X, y = df.drop(columns = ['Rto']), df['Rto']
-
+    
         def _error_function(x, X, y):
             X = np.dot(X, x)
-            return np.sum((y - X)**2)
+            print(y[2::3])
+            return np.sum((y[2::3] - np.array([(1+X[3*i])*(1+X[3*i+1])*(1+X[3*i+2])-1 for i in range(len(X)//3)]))**2)
         
         opti = scipy.optimize.minimize(
                 fun=_error_function, 

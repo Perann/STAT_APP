@@ -17,11 +17,14 @@ from sklearn.linear_model import LinearRegression
 import statsmodels.api as sm
 import sys
 from types import NoneType
+import warnings
 
 # Importing packages from the project
 #sys.path.append("getmansky/")
-from WeightsFunctions.weights import Weights
-
+try:
+    from ..getmansky.WeightsFunctions.weights import Weights
+except ImportError:
+    from WeightsFunctions.weights import Weights
 
 # Class of the Getmansky model
 class GetmanskyModel:
@@ -43,14 +46,33 @@ class GetmanskyModel:
         pass
 
     def optimize_weights_LR(self, Benchmark, Rto):
-        df = pd.DataFrame([Benchmark, Rto], index = ['Benchmark', 'Rto']).T
+        Benchmark_, Rto_ = Benchmark, Rto
+        if Rto_[0] == Rto_[1] and Rto_[1] == Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)                        
+        elif Rto_[0] == Rto_[1] and Rto_[1] != Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_[2:]), np.array(Rto_[2:])
+        elif Rto_[0] != Rto_[1] and Rto_[1] == Rto_[2]:
+            Benchmark_, Rto_ = np.array(Benchmark_[1:]), np.array(Rto_[1:])
+        rto, benchmark = pd.Series(Rto_), pd.Series(Benchmark_)
+        df = pd.DataFrame([benchmark, rto], index = ['Benchmark', 'Rto']).T
         for i in range(1, self.k+1):
             df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
+        df["1"] = 1
         df.dropna(inplace = True)
         X, y = df.drop(columns = ['Rto']), df['Rto']
-        lr = LinearRegression()
-        lr.fit(X, y)
-        self.weights.list = lr.coef_/np.sum(lr.coef_) #careful with the order of thetas (seems to be ok cf. doc)
+    
+        def _error_function(x, X, y):
+            X = np.dot(X, x)
+            return np.sum((y[2::3] - np.array([(1+X[3*i])*(1+X[3*i+1])*(1+X[3*i+2])-1 for i in range(len(X)//3)]))**2)
+        
+        opti = scipy.optimize.minimize(
+                fun=_error_function, 
+                x0=[0.5]*(self.k + 2),
+                args = (X, y),
+                bounds = ((0,None),(0,None), (0,None), (None, None))
+            )
+        if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+        self.weights.list = opti.x[:(self.k+1)]/np.sum(opti.x[:(self.k+1)])
 
     def fit(self, Benchmark, Rto, window=None):
         if not isinstance(window, (int, NoneType)):
@@ -77,7 +99,10 @@ class GetmanskyModel:
                 fun=_error_function, 
                 x0=[0.5, 1],
                 args=(Benchmark, Rto)
-                )
+            )
+            
+            if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+
             self.beta, self.mu = opti.x[0], opti.x[1]
         else :
             self.beta, self.mu = [], []
@@ -97,27 +122,35 @@ class GetmanskyModel:
                         fun=_error_function, 
                         x0=[0.5, 1],
                         args=(Benchmark_, Rto_)
-                        )
+                    )
+                    
+                    if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+
                     self.beta.append(opti.x[0])
                     self.mu.append(opti.x[1])
-                    
 
-
-    def predict(self, Benchmark):
+    def predict(self, Benchmark, rebase = None):
         if isinstance(self.beta, list) and isinstance(self.mu, list):
             Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
+            rebase = rebase[-len(self.beta):]
         else:
             Rt = self.mu + self.beta*np.array(Benchmark)
-        Rto_pred = [Rt[0], Rt[1], Rt[2]]
-        for i in range(3, len(Rt)):
-            Rto_pred.append(np.dot(self.weights.list, np.array(Rt[i-2:i+1])))
-        return np.array(Rto_pred)
-
-    def predict_theorique(self, Benchmark):
-        if isinstance(self.beta, list) and isinstance(self.mu, list):
-            Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
-        else:
-            Rt = self.mu + self.beta*np.array(Benchmark)
+        if isinstance(rebase, np.ndarray):
+            # handling edge cases of first values
+            if rebase[0] == rebase[1] and rebase[1] == rebase[2]:
+                start = 2 # basicly nothing to do around here                      
+            elif rebase[0] == rebase[1] and rebase[1] != rebase[2]:
+                start = 4
+                Rt[1] = ((1+rebase[1])/(1+Rt[0])) - 1
+            elif rebase[0] != rebase[1] and rebase[1] == rebase[2]:
+                start = 3
+                Rt[0] = rebase[0]
+            for i in range(start, len(rebase), 3):
+                Rt[i] = ((1+rebase[i])/((1+Rt[i-2])*(1+Rt[i-1]))) - 1
+                
+        elif rebase is not None:
+            raise ValueError("Warning ! rebase argument should be None (no rebase) or a np.ndarray")
+        
         return np.array(Rt)
 
 
@@ -144,7 +177,7 @@ if __name__ == "__main__":
         .filter(['QUARTER', 'Date', 'US Equity USD Unhedged'])
         .dropna()
         .set_index('Date', drop = False)
-        .resample('M')
+        .resample('ME')
         .last()
         .dropna()
         .assign(returns_US_equity = (lambda x: x['US Equity USD Unhedged'].pct_change(fill_method=None)))
@@ -158,20 +191,19 @@ if __name__ == "__main__":
 
     getmansky = GetmanskyModel(2)
     getmansky.set_default_weights("sumOfYears")
-    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1), window=24)
-    results['returns unsmoothed'] = np.nan
+    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
     results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
+
     results = results.set_index('Date')
 
-    for index, line in results.iterrows():
-        if index.month in [1, 2, 4, 5, 7, 8, 10, 11]:
-            results.loc[index, 'returns_PE'] = None
+    for line in results.iterrows():
+        if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
+            line[1]['returns_PE'] = None
 
-    print(getmansky.beta, getmansky.mu)
     results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
     results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
     results_no_interpolation = results.resample('QE').last() #just to view the trend
-    print(results)
+
     # Restricting the dates
     end_date_forced = '30-06-2023' #just for the visualisation
     results = results[:end_date_forced]
@@ -201,6 +233,7 @@ if __name__ == "__main__":
 
     # an important point here, if we plot quarterly : we have 102 data points
     # and thus monthly is about 303 data points
+
 
 
     ########### to clean ###########

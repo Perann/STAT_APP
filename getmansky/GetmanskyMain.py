@@ -1,26 +1,20 @@
 """
 In this file we will implement a first version of the getmansky model.
-Espacially we will implement the three classical type of weights :
-- Equal weights
-- Sum of years (linearly decreasing with time)
-- Geometric (exponentialy decreasing with time)
+We will implement the functions to optimize the weights and to fit the model.
+The structure of the code is quit similar to what you see in sk-learn code.
+There is a class GetmanskyModel that will contain all the functions.
+There is a function fit that will fit the model. And a function predict that will predict the returns.
 """
 
 # Importing the libraries
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-import scipy.stats as stats
 import scipy
-from sklearn.linear_model import LinearRegression
-import statsmodels.api as sm
-import sys
 from types import NoneType
 import warnings
 
-# Importing packages from the project
-#sys.path.append("getmansky/")
+# Importing packages from the project (we put a try to handle path error)
 try:
     from ..getmansky.WeightsFunctions.weights import Weights
 except ImportError:
@@ -28,25 +22,74 @@ except ImportError:
 
 # Class of the Getmansky model
 class GetmanskyModel:
-    def __init__(self, k):
+    """
+    This class will contain all the functions related to the Getmansky model.
+    
+    The Getmansky model is a model that predicts the returns of an alternative asset using the returns of a benchmark and the observed return of the alternative asset (less frequently).
+
+    Parameters:
+    -----------
+    k: int
+        The memory of the model. It is the number of weights to be used minus 1.
+
+    Examples:
+    ---------
+    >>> getmansky = GetmanskyModel(2)
+    >>> getmansky.set_default_weights("sumOfYears")
+    >>> getmansky.fit(df["return_benchmark"].values.reshape(-1, 1), df["return_alternative_asset"].values.reshape(-1,1), window = None)
+    >>> df["return_unsmoothed"] = getmansky.predict(df["return_benchmark"], rebase = df["returns_alternative_asset"])
+    """
+    def __init__(
+        self, 
+        k : int = 2
+    ) -> None:
+        """
+        Initializes the GetmanskyModel object.
+
+        Parameters:
+        -----------
+        k: int
+            The memory of the model. It is the number of weights to be used minus 1.
+        """
         self.k = k
-        self.weights = Weights("equal", k)
+        self.weights = Weights("equal", k) # default value
         self.mu = 0
         self.beta = 1
 
-    def set_default_weights(self, type_, delta = None):
+    def set_default_weights(self, type_, delta=None) -> None:
+        """
+        This function sets the default weights of the model.
+        In order to use the getmanky model you should use either this function or the optimize_weights function.
+
+        Parameters:
+        -----------
+        type_: str
+            The type of weights to be used. It can be "equal", "sumOfYears" or "geometric".
+        delta: float | None
+            The parameter to be used in the geometric weights.
+        """
+        # updating weight list
         self.weights = Weights(type_, self.k, delta)
 
     def optimize_weights_MLE(self, Rto):
-        # Xt = Rto - np.mean(Rto)
-        # n = len(Rto)
-        # def S(theta):
-        # return 1/n * np.sum([((Xt-np.mean(Xt[:i]))**2)/  )
-        # return Xt
+        """
+        Didn't have time to implement this function.
+        """
         pass
 
-    def optimize_weights_LR(self, Benchmark, Rto):
+    def optimize_weights_LR(self, Benchmark, Rto) -> None:
+        """
+        This function optimizes the weights of the model using a linear regression.
+
+        Parameters:
+        -----------
+        Benchmark: np.array
+            The benchmark returns.
+        Rto: np.array
+            The observed returns of the alternative asset.
+        """
         Benchmark_, Rto_ = Benchmark, Rto
+        # This is to determine if we are at the beginning of the semester and hence rebase or not
         if Rto_[0] == Rto_[1] and Rto_[1] == Rto_[2]:
             Benchmark_, Rto_ = np.array(Benchmark_), np.array(Rto_)                        
         elif Rto_[0] == Rto_[1] and Rto_[1] != Rto_[2]:
@@ -57,7 +100,7 @@ class GetmanskyModel:
         df = pd.DataFrame([benchmark, rto], index = ['Benchmark', 'Rto']).T
         for i in range(1, self.k+1):
             df[f'bench_lag_{i}'] = df['Benchmark'].shift(i)
-        df["1"] = 1
+        df["1"] = 1 # adding the intercept column
         df.dropna(inplace = True)
         X, y = df.drop(columns = ['Rto']), df['Rto']
     
@@ -72,9 +115,26 @@ class GetmanskyModel:
                 bounds = ((0,None),(0,None), (0,None), (None, None))
             )
         if not opti.success: warnings.warn(f"The optimisation of {Benchmark} didn't terminated successfuly !")
+        # updating weight list
         self.weights.list = opti.x[:(self.k+1)]/np.sum(opti.x[:(self.k+1)])
 
-    def fit(self, Benchmark, Rto, window=None):
+    def fit(self, Benchmark, Rto, window : int =None) -> None:
+        """
+        This function fits the model to the data.
+        More precisely, it optimizes the mu and beta parameters of the model.
+        If there is a not None window argument, the optimization is done on a rolling window. And the beta and mu are lists.
+        If not, the optimization is done on the whole dataset. And the beta and mu are scalars.
+
+        Parameters:
+        -----------
+        Benchmark: np.array
+            The benchmark returns you want as a reference.
+        Rto: np.array
+            The observed returns of the alternative asset.
+        window: int | None
+            The window to use for the rolling optimization. If None, the optimization is done on the whole dataset.
+        """
+        # Checking type
         if not isinstance(window, (int, NoneType)):
             passed = type(window).__name__
             raise TypeError(f"The window argument should be of type int or NoneType (in order to use only 1 window). Here it is " + passed + '.')
@@ -129,7 +189,22 @@ class GetmanskyModel:
                     self.beta.append(opti.x[0])
                     self.mu.append(opti.x[1])
 
-    def predict(self, Benchmark, rebase = None):
+    def predict(self, Benchmark, rebase = None) -> np.array:
+        """
+        This function predicts the returns of the alternative asset.
+
+        Parameters:
+        -----------
+        Benchmark: np.array
+            The benchmark returns you want as a reference.
+        rebase: np.array | None
+            The rebase parameter. If None, no rebase is done. If not None, the rebase is done on the passed array.
+
+        Returns:
+        --------
+        Rt : np.array
+            The predicted returns of the alternative asset.
+        """
         if isinstance(self.beta, list) and isinstance(self.mu, list):
             Rt = self.mu + self.beta*np.array(Benchmark)[-len(self.beta):]
             rebase = rebase[-len(self.beta):]
@@ -157,8 +232,8 @@ class GetmanskyModel:
 
 
 if __name__ == "__main__":
-    # chaining is way faster (almost 2 times)
 
+    # chaining is way faster (almost 2 times)
     alternative_asset_data = (
         # Importing the dataset
         pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Alternative Asset")
@@ -230,18 +305,5 @@ if __name__ == "__main__":
     plt.legend()
     #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModel_SoY_{2}_PE_US_equity.png')
     plt.show()
-
     # an important point here, if we plot quarterly : we have 102 data points
     # and thus monthly is about 303 data points
-
-
-
-    ########### to clean ###########
-
-    # # import statsmodels.api as sm
-    # # data = sm.datasets.macrodata.load_pandas()
-    # # rgdpg = data.data['realgdp'].pct_change().dropna()
-    # # acov = sm.tsa.acovf(rgdpg, fft = False, nlag = 2)
-    # # theta, sigma2  = sm.tsa.stattools.innovations_algo(acov)
-    # # print(acov)
-    # # print(theta)

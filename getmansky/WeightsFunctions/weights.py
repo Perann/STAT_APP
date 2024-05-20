@@ -11,9 +11,30 @@ import matplotlib.pyplot as plt
 # We will now create some functions that will return a list of weights
 
 class Weights:
-    """In this class we will code every functions related to the weights of the Getmansky model"""
+    """In this class we will code every functions related to the weights of the Getmansky model.
+    The weights can be of three types:
+    - Equal weights
+    - Sum of years weights
+    - Geometric weights
+    """
 
-    def __init__(self, type, k, delta = None):
+    def __init__(
+        self, 
+        type, 
+        k, 
+        delta=None
+    ):
+        """
+        Initializes the Weights object.
+        Parameters:
+        -----------
+        type: str
+            The type of weights to be used. It can be "equal", "sumOfYears" or "geometric".
+        k: int
+            The number of weights to be used.
+        delta: float
+            The parameter to be used in the geometric weights.
+        """
         if type == "equal":
             self.list = [1/(k+1) for _ in range(k+1)]
         elif type == "sumOfYears":
@@ -27,9 +48,15 @@ class Weights:
         self.delta = delta
 
     def __str__(self):
+        """
+        This function is here to facilitate the code reading
+        """
         return str(self.list)
     
     def c_mu(self):
+        """
+        This function computes the sum of the weights
+        """
         return np.sum(self.list)
     
     def c_sigma(self):
@@ -39,8 +66,10 @@ class Weights:
         return 1/self.c_sigma()
     
     def xi(self):
-        """This function is here to facilitate the code reading"""
-        """It can be seen as a "smoothing index" """
+        """
+        This function is here to facilitate the code reading
+        It can be seen as a "smoothing index"
+        """
         return np.sum(np.array(self.list)**2)
 
     def zeta(self):

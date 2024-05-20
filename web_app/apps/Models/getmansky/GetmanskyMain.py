@@ -232,78 +232,134 @@ class GetmanskyModel:
 
 
 if __name__ == "__main__":
+    # Parameters
+    vol_start_date = "31-12-2017"
+    vol_end_date = "31-12-2022"
 
-    # chaining is way faster (almost 2 times)
+    starting_date = "31-03-2007" # rebasing in order to compare cumulative returns
+
+    # Preprocessing
     alternative_asset_data = (
         # Importing the dataset
-        pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Alternative Asset")
-        # Preprocessing
-        .filter(["QUARTER", "Private Equity USD Unhedged"])
-        .dropna()
-        .assign(returns_PE = (lambda x: x['Private Equity USD Unhedged'].pct_change(fill_method=None)))
-        .dropna()
-        .set_index("QUARTER")
+        pd.read_excel("./EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Alternative Asset", index_col=0)
     )
+    
+    def tweak_data(df_):
+        return (df_
+                .assign(**{col + '_%': df_[col].pct_change(fill_method = None) for col in df_.columns})
+                .rename(lambda c: c.replace(' ','_'), axis = 1)
+                .drop(columns = ["Infrastructure_Equity_Listed_-_USD_Unhedged", "Infrastructure_Equity_Listed_-_USD_Unhedged_%"])
+                .iloc[1:]
+            )
+
+    alternative_asset_data = tweak_data(alternative_asset_data)
 
     classic_asset_data = (
         # Importing the dataset
-        pd.read_excel("/Users/adamelbernoussi/Desktop/EnsaeAlternativeSubject/EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Classic Asset")
-        # Preprocessing
-        .filter(['QUARTER', 'Date', 'US Equity USD Unhedged'])
-        .dropna()
-        .set_index('Date', drop = False)
-        .resample('ME')
-        .last()
-        .dropna()
-        .assign(returns_US_equity = (lambda x: x['US Equity USD Unhedged'].pct_change(fill_method=None)))
-        .dropna()
-        .set_index("QUARTER")
+        pd.read_excel("./EnsaeAlternativeTimeSeries.xlsx", sheet_name= "Classic Asset", index_col=1)
+    )
+    
+    def tweak_data(df_):
+        return (
+            df_
+            .resample('ME')
+            .last()
+            .assign(**{col + '_%': df_[col].pct_change(fill_method = None) for col in df_.columns if df_[col].dtype != object})
+            .rename(lambda c: c.replace(' ','_'), axis = 1)
+            .reset_index()
+            .assign(QUARTER=lambda x: x["QUARTER"].bfill()) #only one value is missing in the dataframe
+            .set_index("QUARTER")
+            .iloc[1:]        
+        )
+
+    classic_asset_data = tweak_data(classic_asset_data)
+
+    df = (
+        classic_asset_data
+        .copy()
+        .merge(alternative_asset_data, how="inner", left_index=True, right_index=True)
+        .set_index("Date")
+        .loc[starting_date:]
+        .iloc[1:]
+        .interpolate(method="linear") # dealing with potential missing values
     )
 
-    results = classic_asset_data.copy()
-    results = results.merge(alternative_asset_data, how = 'inner', left_index = True, right_index = True).drop(columns = ['US Equity USD Unhedged', 'Private Equity USD Unhedged'])
-    results = results[1:]
+    start_date = "01-01-2008" # format "DD-MM-YYYY"
+    end_date = "12-31-2012" # format "DD-MM-YYYY"
+    weight_type = "sumOfYears" # choose between : sumOfYears, equal, geometric or optimized
+    order = 2 # choose an int
+    window = 12 # choose an int or put None
+    benchmark = 'USD_Corporate_Bond_-_USD_Unhedged_%' #one of the following list :
+    # 'Liquidity_USD_Unhedged_%'
+    # 'US_Equity_USD_Unhedged_%'
+    # 'US_Government_Bond_USD_Unhedged_%'
+    # 'USD_Corporate_Bond_-_USD_Unhedged_%'
+    rebase = True
+    #rebase parameter : True of False
 
-    getmansky = GetmanskyModel(2)
-    getmansky.set_default_weights("sumOfYears")
-    getmansky.fit(results['returns_US_equity'].values.reshape(-1, 1), results['returns_PE'].values.reshape(-1,1))
-    results['returns unsmoothed'] = getmansky.predict(results['returns_US_equity'])
+    for col in filter(lambda x: "%" in x, alternative_asset_data.columns):
+        getmansky = GetmanskyModel(order)
 
-    results = results.set_index('Date')
+        if weight_type != "optimized":
+            getmansky.set_default_weights(weight_type)
+        else:
+            getmansky.optimize_weights_LR(df[benchmark].values, 
+                    df[col].values
+            )
+        index = df[col].dropna().index
+        if len(index)>1:
+            bench = df.loc[index, benchmark]
+            getmansky.fit(bench.values.reshape(-1, 1), 
+                        df[col].dropna().values.reshape(-1,1), 
+                        window = window
+            )
+            df[col+'_unsmoothed'] = np.nan
+            rebase_ = df[col].dropna().values if rebase else None
+            df.loc[index[window:], col+'_unsmoothed'] = getmansky.predict(bench, rebase=rebase_)
+        else:
+            warnings.warn(f"Be careful, {col} has no value for the selected timeframe.")
+            df[col+'_unsmoothed'] = 0
 
-    for line in results.iterrows():
-        if line[0].month in [1, 2, 4, 5, 7, 8, 10, 11]:
-            line[1]['returns_PE'] = None
+    #switching to improve readability
+    if window is None: window = 0
 
-    results['returns unsmoothed TR'] = (results['returns unsmoothed']+1).cumprod()-1
-    results['returns PE TR'] = (results['returns_PE']+1).cumprod()-1
-    results_no_interpolation = results.resample('QE').last() #just to view the trend
+    # rebasing
+    df = (
+        df
+        .assign(**{
+            col: df[col].iloc[len(df[col])-df[col].count()+window:]
+            for col in alternative_asset_data.columns if "%" in col
+        })    
+        .pipe(lambda df_temp : df_temp.assign(**{
+            col: df_temp[col].mul(pd.Series(
+                [0 if date.month in [1, 2, 4, 5, 7, 8, 10, 11] else 1 for date in df_temp[col].index],
+                index = df_temp[col].index
+                )) 
+            for col in alternative_asset_data.columns
+        }))
+        .pipe(lambda df_temp: df_temp.assign(**{
+            col + '_TR': (df_temp[col]+1).cumprod()-1
+            for col in df_temp.columns if "%" in col
+        }))
+        .pipe(lambda df_temp : df_temp.assign(**{
+            col+"_TR": df_temp[col+"_TR"].mul(pd.Series(
+                [np.nan if date.month in [1, 2, 4, 5, 7, 8, 10, 11] else 1 for date in df_temp[col].index],
+                index = df_temp[col].index
+                )) 
+            for col in alternative_asset_data.columns if "%" in col
+        }))
+    )
 
-    # Restricting the dates
-    end_date_forced = '30-06-2023' #just for the visualisation
-    results = results[:end_date_forced]
-    results_no_interpolation = results_no_interpolation[:end_date_forced]
-
-    start_date = '2006-08-31'
-    end_date = '2010-09-30'
-    results_sliced = results.loc[start_date:end_date]
-
-    # Plotting
-    # define subplot layout
-    fig, axes = plt.subplots(nrows=3, ncols=1)
-    fig.suptitle('Getmansky model interpolation and unsmoothing PE on US equity', fontsize=12)
-
-    results_no_interpolation['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', ax=axes[0])
-    results_no_interpolation['returns PE TR'].plot(label = 'Rt PE', ax=axes[0])
-
-    results['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[1])
-    results['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[1])
-
-    results_sliced['returns unsmoothed TR'].plot(label = 'Rt PE unsmoothed', marker = 'o', linestyle = '', ax=axes[2])
-    results_sliced['returns PE TR'].plot(label = 'Rt PE', marker = 'o', linestyle = '', ax=axes[2])
-
-    plt.legend()
-    #plt.savefig(f'getmansky/output/GetmanskyPres_8_fev/GetmanskyModel_SoY_{2}_PE_US_equity.png')
-    plt.show()
-    # an important point here, if we plot quarterly : we have 102 data points
-    # and thus monthly is about 303 data points
+    df_ = df.loc[start_date:end_date]
+    gen = [col for col in df_.columns if "%_unsmoothed_TR" in col]
+    for col in gen:
+        plt.plot(df_.index, df_[col],
+            marker = 'o',
+            linestyle = '',
+            label = col)
+        plt.plot(df_.loc[df_.index.month.isin([3, 6, 9, 12]), col[:-14]+"_TR"].index, df_.loc[df_.index.month.isin([3, 6, 9, 12]), col[:-14]+"_TR"],
+            marker = 'o',
+            linestyle = '--',
+            label = col[:-14]+"_TR")
+        plt.legend()
+        plt.show()
